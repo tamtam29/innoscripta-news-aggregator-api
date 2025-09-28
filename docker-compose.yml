@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: backend_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - app_network
+
+  pgadmin:
+      image: dpage/pgadmin4
+      container_name: backend_pgadmin
+      platform: linux/amd64
+      ports:
+          - 8081:80
+      environment:
+        - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+        - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
+        - POSTGRES_PASSWORD=${DB_PASSWORD}
+        - PGADMIN_DISABLE_POSTFIX=true
+      networks:
+        - app_network
+
+  backend_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend_api
+    environment:
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - .:/var/www/html/backend_api
+    networks:
+      - app_network
+    depends_on:
+      - postgres
+
+  nginx:
+    image: nginx:latest
+    container_name: backend_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+      - .:/var/www/html/backend_api
+    networks:
+      - app_network
+    depends_on:
+      - backend_api
+
+volumes:
+  pgdata:
+
+networks:
+  app_network:
