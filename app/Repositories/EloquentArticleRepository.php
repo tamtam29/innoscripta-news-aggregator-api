@@ -1,0 +1,146 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Models\Article;
+use App\Models\ArticleSource;
+use App\Repositories\Contracts\ArticleRepository;
+use App\Integrations\News\DTOs\Article as ArticleDTO;
+use Carbon\Carbon;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class EloquentArticleRepository implements ArticleRepository
+{
+    public function upsertFromDTOs(array $articleDTOs): Collection
+    {
+        Log::info('Upserting ' . count($articleDTOs) . ' articles from DTOs');
+        if (empty($articleDTOs)) return collect();
+
+        $now = now();
+        $articleRows = [];
+        $articleSourceRows = [];
+
+        foreach ($articleDTOs as $dto) {
+            /** @var ArticleDTO $dto */
+            $articleRows[] = [
+                'url_sha1'     => sha1($dto->url),
+                'title'        => $dto->title,
+                'description'  => $dto->description,
+                'url'          => $dto->url,
+                'image_url'    => $dto->imageUrl,
+                'author'       => $dto->author,
+                'publisher'    => $dto->publisher,
+                'published_at' => $dto->publishedAt,
+                'provider'     => $dto->provider,
+                'category'     => $dto->category,
+            ];
+
+            if ($dto->provider) {
+                $articleSourceRows[] = [
+                    'provider'    => $dto->provider,
+                    'external_id' => $dto->externalId ?? $dto->url,
+                    'metadata'    => $dto->metadata,
+                    'url_sha1'    => sha1($dto->url),
+                ];
+            }
+        }
+
+        DB::transaction(function () use ($articleRows, $articleSourceRows) {
+            Article::upsert(
+                $articleRows,
+                ['url_sha1'],
+                ['title','description','url','image_url','author','publisher','published_at','provider','category']
+            );
+
+            $articles = Article::whereIn('url_sha1', array_column($articleRows, 'url_sha1'))
+                ->pluck('id','url_sha1');
+
+            if (!empty($articleSourceRows)) {
+                $toUpsert = array_map(function ($source) use ($articles) {
+                    return [
+                        'article_id'  => $articles[$source['url_sha1']] ?? null,
+                        'provider'    => $source['provider'],
+                        'external_id' => $source['external_id'],
+                        'metadata'    => json_encode($source['metadata']),
+                    ];
+                }, $articleSourceRows);
+                Log::info('Prepared ' . count($toUpsert) . ' article sources for upsert');
+
+                $toUpsert = array_values(array_filter($toUpsert, fn($r) => !empty($r['article_id'])));
+                Log::info('Upserting ' . count($toUpsert) . ' article sources');
+
+                ArticleSource::upsert(
+                    $toUpsert,
+                    ['provider','external_id'],
+                    ['article_id','metadata']
+                );
+            }
+        });
+
+        return Article::whereIn('url_sha1', array_column($articleRows, 'url_sha1'))->get();
+    }
+
+    private function baseQuery(array $filters): Builder
+    {
+        $query = Article::query();
+
+        if (!empty($filters['keyword'])) {
+            $term = trim($filters['keyword']);
+            $query->where(function (Builder $w) use ($term) {
+                $w->where('title', 'ilike', "%{$term}%")
+                  ->orWhere('description', 'ilike', "%{$term}%")
+                  ->orWhere('author', 'ilike', "%{$term}%")
+                  ->orWhere('publisher', 'ilike', "%{$term}%");
+            });
+        }
+
+        if (!empty($filters['from'])) { 
+            $query->where('published_at', '>=', $filters['from']); 
+        }
+
+        if (!empty($filters['to'])) {
+            $query->where('published_at', '<=', $filters['to']);
+        }
+
+        if (!empty($filters['provider'])) {
+            $providers = is_array($filters['provider']) ? $filters['provider'] : [$filters['provider']];
+            $query->whereIn('provider', $providers);
+        }
+
+        if (!empty($filters['publisher'])) {
+            $publishers = is_array($filters['publisher']) ? $filters['publisher'] : [$filters['publisher']];
+            $query->whereIn('publisher', $publishers);
+        }
+
+        if (!empty($filters['author'])) {
+            $authors = is_array($filters['author']) ? $filters['author'] : [$filters['author']];
+            $query->where(function($w) use ($authors) {
+                foreach ($authors as $a) $w->orWhere('author', 'ilike', '%'.$a.'%');
+            });
+        }
+
+        if (!empty($filters['category'])) {
+            $categories = is_array($filters['category']) ? $filters['category'] : [$filters['category']];
+            $query->whereIn('category', $categories);
+        }
+
+        return $query->orderByDesc('published_at')->orderByDesc('id');
+    }
+
+    public function search(array $filters, int $page, int $pageSize): LengthAwarePaginator
+    {
+        return $this->baseQuery($filters)->paginate($pageSize, ['*'], 'page', $page);
+    }
+
+    public function newestPublishedAt(array $filters): ?Carbon
+    {
+        $row = $this->baseQuery($filters)->select('published_at')->first();
+        return $row?->published_at instanceof Carbon
+            ? $row->published_at
+            : ($row?->published_at ? Carbon::parse($row->published_at) : null);
+    }
+}
