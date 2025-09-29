@@ -5,7 +5,7 @@ return [
     'guardian' => ['base' => 'https://content.guardianapis.com', 'key' => env('GUARDIAN_API_KEY', '')],
     'nyt'      => ['base' => 'https://api.nytimes.com/svc', 'key' => env('NYT_API_KEY', '')],
 
-    'enabled_providers' => ['newsapi'],
+    'enabled_providers' => ['newsapi', 'guardian', 'nyt'],
 
     'freshness' => [
         'headlines_minutes' => 15,

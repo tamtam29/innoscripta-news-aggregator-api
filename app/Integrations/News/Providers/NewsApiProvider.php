@@ -35,9 +35,11 @@ class NewsApiProvider implements NewsProvider
         ]);
 
         try {
-            $res = Http::baseUrl(config('news.newsapi.base'))->get('top-headlines', $params)->throw();
-            $json = $res->json();
+            $res = Http::baseUrl(config('news.newsapi.base'))
+                ->get('top-headlines', $params)
+                ->throw();
 
+            $json = $res->json();
             $category = Taxonomy::canonicalizeCategory($params['category'] ?? null);
 
             return $this->formatArticles($json['articles'] ?? [], $category);
@@ -66,7 +68,10 @@ class NewsApiProvider implements NewsProvider
         ]);
 
         try {
-            $res = Http::baseUrl(config('news.newsapi.base'))->get('everything', $params)->throw();
+            $res = Http::baseUrl(config('news.newsapi.base'))
+                ->get('everything', $params)
+                ->throw();
+
             $json = $res->json();
 
             return $this->formatArticles($json['articles'] ?? []);
