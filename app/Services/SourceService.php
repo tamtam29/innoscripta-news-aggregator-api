@@ -6,20 +6,21 @@ use App\Repositories\EloquentSourceRepository;
 
 /**
  * Source Service
- * 
+ *
  * Handles source mapping and management operations
- * 
+ *
  * @package App\Services
  */
 class SourceService
 {
     public function __construct(
         private EloquentSourceRepository $sourceRepository
-    ) {}
+    ) {
+    }
 
     /**
      * Convert source name to NewsAPI source ID
-     * 
+     *
      * @param string $sourceName Source name to convert
      * @return string|null
      */
@@ -31,7 +32,7 @@ class SourceService
 
     /**
      * Get all available source names across all providers
-     * 
+     *
      * @return array Array of sources with source_id and source_name
      */
     public function getAllSourceNames(): array
@@ -41,7 +42,7 @@ class SourceService
 
     /**
      * Get total count of active sources
-     * 
+     *
      * @return int Number of active sources
      */
     public function getActiveSourcesCount(): int
@@ -51,7 +52,7 @@ class SourceService
 
     /**
      * Create or update source
-     * 
+     *
      * @param array $attributes Attributes to match for existing record
      * @param array $values Values to update or create with
      * @return \App\Models\Source

@@ -9,14 +9,16 @@ use Illuminate\Http\Request;
 
 /**
  * Source API Controller
- * 
+ *
  * Handles source retrieval endpoints with pagination and search functionality.
- * 
+ *
  * @package App\Http\Controllers\Api
  */
 class SourceController extends Controller
 {
-    public function __construct(private SourceService $sourceService) {}
+    public function __construct(private SourceService $sourceService)
+    {
+    }
 
     /**
      * @OA\Get(

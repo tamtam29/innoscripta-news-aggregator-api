@@ -12,9 +12,9 @@ use App\Services\NewsPreferenceService;
 
 /**
  * News API Controller
- * 
+ *
  * Handles news article retrieval endpoints for headlines and search.
- * 
+ *
  * @package App\Http\Controllers\Api
  */
 class NewsController extends Controller
@@ -22,7 +22,8 @@ class NewsController extends Controller
     public function __construct(
         private NewsService $newsService,
         private NewsPreferenceService $newsPreferenceService,
-    ) {}
+    ) {
+    }
 
     /**
      * @OA\Get(
@@ -126,7 +127,7 @@ class NewsController extends Controller
     public function headlines(HeadlinesRequest $request)
     {
         $params = $request->validated();
-        
+
         $page = (int) ($params['page'] ?? 1);
         $pageSize = (int) ($params['pageSize'] ?? 20);
 
@@ -244,7 +245,7 @@ class NewsController extends Controller
     public function search(SearchNewsRequest $request)
     {
         $params = $request->validated();
-        
+
         $page = (int) ($params['page'] ?? 1);
         $pageSize = (int) ($params['pageSize'] ?? 20);
 
@@ -255,7 +256,7 @@ class NewsController extends Controller
 
     /**
      * Format paginated response
-     * 
+     *
      * @param \Illuminate\Contracts\Pagination\LengthAwarePaginator $paginator
      * @return \Illuminate\Http\JsonResponse
      */
@@ -310,7 +311,7 @@ class NewsController extends Controller
      */
     public function show(int $id)
     {
-        $result = $this->newsService->findById($id);   
+        $result = $this->newsService->findById($id);
         return response()->json(new ArticleResource($result));
     }
 
@@ -353,7 +354,7 @@ class NewsController extends Controller
     public function destroy(int $id)
     {
         $deleted = $this->newsService->deleteById($id);
-        
+
         return response()->json([
             'message' => 'Article deleted successfully',
             'data' => ['id' => $id]

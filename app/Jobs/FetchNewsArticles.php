@@ -15,7 +15,10 @@ use Carbon\Carbon;
 
 class FetchNewsArticles implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * The number of times the job may be attempted.
@@ -33,7 +36,7 @@ class FetchNewsArticles implements ShouldQueue
 
     /**
      * Create a new job instance
-     * 
+     *
      * @param array $params Request parameters for fetching articles
      * @param string $mode Fetch mode (headlines or search)
      * @param string $cacheKey Cache key for tracking fetch times
@@ -44,11 +47,12 @@ class FetchNewsArticles implements ShouldQueue
         private string $mode,
         private string $cacheKey,
         private int $freshMinutes
-    ) {}
+    ) {
+    }
 
     /**
      * Execute the job
-     * 
+     *
      * @param EloquentArticleRepository $articleRepository Repository for storing articles
      * @param ProviderAggregator $providerAggregator Aggregator for news providers
      * @return void
@@ -70,10 +74,10 @@ class FetchNewsArticles implements ShouldQueue
                 $chunk = $this->mode === 'search'
                     ? $provider->searchArticles($this->params)
                     : $provider->topHeadlines($this->params);
-                
+
                 $dtos = $dtos->merge($chunk);
                 Log::info("[FetchNewsArticles] Fetched {$chunk->count()} articles from {$provider::key()}");
-                
+
             } catch (\Exception $e) {
                 $errors[] = "Provider {$provider::key()}: {$e->getMessage()}";
                 Log::error("[FetchNewsArticles] Provider fetch failed", [
@@ -103,7 +107,7 @@ class FetchNewsArticles implements ShouldQueue
 
     /**
      * Handle a job failure
-     * 
+     *
      * @param \Throwable $exception The exception that caused the failure
      * @return void
      */

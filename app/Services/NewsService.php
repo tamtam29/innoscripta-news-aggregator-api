@@ -14,10 +14,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * News Service
- * 
+ *
  * Manages news article retrieval from providers and database.
  * Handles both headlines and search functionality with freshness checking.
- * 
+ *
  * @package App\Services
  */
 class NewsService
@@ -28,24 +28,25 @@ class NewsService
     public function __construct(
         private EloquentArticleRepository $articleRepository,
         private ProviderAggregator $providerAggregator,
-    ) {}
+    ) {
+    }
 
     /**
      * Find article by ID
-     * 
+     *
      * @param int $id Article ID
      * @return Article|null
      */
     public function findById(int $id): ?Article
     {
-        try {            
+        try {
             $article = $this->articleRepository->findById($id);
 
             if (!$article) {
                 Log::warning('[NewsService] Article not found', ['id' => $id]);
                 throw new HttpException(404, "Article with ID {$id} does not exist");
             }
-            
+
             return $article;
         } catch (HttpException $e) {
             // Re-throw HTTP exceptions to preserve status codes (404, etc.)
@@ -62,21 +63,21 @@ class NewsService
 
     /**
      * Delete article by ID
-     * 
+     *
      * @param int $id Article ID
      * @return bool True if deleted, false if not found
      */
     public function deleteById(int $id): bool
     {
-        try {            
+        try {
             $deleted = $this->articleRepository->deleteById($id);
-            
+
             if (!$deleted) {
                 Log::warning('[NewsService] Article not found for deletion', ['id' => $id]);
                 throw new HttpException(404, "Article with ID {$id} does not exist or could not be deleted");
             }
-            
-            return true;            
+
+            return true;
         } catch (HttpException $e) {
             // Re-throw HTTP exceptions to preserve status codes (404, etc.)
             throw $e;
@@ -92,7 +93,7 @@ class NewsService
 
     /**
      * Get top headlines
-     * 
+     *
      * @param array $params Filter parameters
      * @param int $page Page number
      * @param int $pageSize Results per page
@@ -105,7 +106,7 @@ class NewsService
 
     /**
      * Search articles
-     * 
+     *
      * @param array $params Search parameters (must include keyword)
      * @param int $page Page number
      * @param int $pageSize Results per page
@@ -118,7 +119,7 @@ class NewsService
 
     /**
      * Core article fetching logic with intelligent caching
-     * 
+     *
      * @param array $params Filter/search parameters
      * @param int $page Page number
      * @param int $pageSize Results per page
@@ -134,14 +135,14 @@ class NewsService
         $cacheKey = $this->getCacheKey($params, $mode);
         $lastFetchTime = Cache::get($cacheKey);
         $freshMinutes = (int) config('news.freshness.' . ($mode === self::MODE_SEARCH ? 'search_minutes' : 'headlines_minutes'), 15);
-        
+
         // Check if we've fetched recently to avoid duplicate API calls
-        $shouldFetch = !$lastFetchTime || 
+        $shouldFetch = !$lastFetchTime ||
                       Carbon::parse($lastFetchTime)->lt(Carbon::now()->subMinutes($freshMinutes));
 
         if ($shouldFetch) {
             $params = array_merge($params, ['page' => $page, 'pageSize' => $pageSize]);
-            
+
             if ($paginator->total() === 0) {
                 // No existing data - wait for fresh fetch synchronously
                 Log::info("[NewsService] No existing data, fetching synchronously from providers", [
@@ -149,9 +150,9 @@ class NewsService
                     'cache_key' => $cacheKey,
                     'last_fetch' => $lastFetchTime
                 ]);
-                
+
                 $this->fetchFromProviders($params, $mode, $cacheKey, $freshMinutes);
-                
+
                 // Get updated results after fetching
                 $paginator = $this->articleRepository->search($params, $page, $pageSize);
             } else {
@@ -162,8 +163,8 @@ class NewsService
                     'existing_total' => $paginator->total(),
                     'last_fetch' => $lastFetchTime
                 ]);
-                
-                FetchNewsArticles::dispatch($params, $mode, $cacheKey, $freshMinutes)->onQueue('news');                
+
+                FetchNewsArticles::dispatch($params, $mode, $cacheKey, $freshMinutes)->onQueue('news');
             }
         } else {
             Log::info("[NewsService] Serving from database: {$paginator->total()} articles", [
@@ -176,7 +177,7 @@ class NewsService
 
     /**
      * Fetch articles from external providers
-     * 
+     *
      * @param array $params
      * @param string $mode
      * @param string $cacheKey
@@ -193,10 +194,10 @@ class NewsService
                 $chunk = $mode === self::MODE_SEARCH
                     ? $provider->searchArticles($params)
                     : $provider->topHeadlines($params);
-                
+
                 $dtos = $dtos->merge($chunk);
                 Log::info("[NewsService] Fetched {$chunk->count()} articles from {$provider::key()}");
-                
+
             } catch (\Exception $e) {
                 $errors[] = "Provider {$provider::key()}: {$e->getMessage()}";
                 Log::error("[NewsService] Provider fetch failed", [
@@ -221,7 +222,7 @@ class NewsService
 
     /**
      * Generate cache key for fetch tracking
-     * 
+     *
      * @param array $params
      * @param string $mode
      * @return string

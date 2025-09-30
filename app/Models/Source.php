@@ -7,10 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Source Model
- * 
+ *
  * Represents news sources from various providers (NewsAPI, Guardian, NYT).
  * Stores source metadata including name, description, URL, category, and provider information.
- * 
+ *
  * @package App\Models
  */
 class Source extends Model
@@ -35,7 +35,7 @@ class Source extends Model
 
     /**
      * Scope to get only active sources
-     * 
+     *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */

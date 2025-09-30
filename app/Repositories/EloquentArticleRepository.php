@@ -16,17 +16,17 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Eloquent Article Repository
- * 
+ *
  * Database repository implementation for managing articles using Laravel's Eloquent ORM.
  * Handles article storage, retrieval, and search operations with provider integration.
- * 
+ *
  * @package App\Repositories
  */
 class EloquentArticleRepository implements ArticleRepository
 {
     /**
      * Find article by ID
-     * 
+     *
      * @param int $id Article ID
      * @return Article|null
      */
@@ -37,34 +37,36 @@ class EloquentArticleRepository implements ArticleRepository
 
     /**
      * Delete article by ID
-     * 
+     *
      * @param int $id Article ID
      * @return bool True if deleted, false if not found
      */
     public function deleteById(int $id): bool
     {
         $article = Article::find($id);
-        
+
         if (!$article) {
             return false;
         }
-        
+
         return $article->delete();
     }
 
     /**
      * Insert or update articles from DTOs
-     * 
+     *
      * Converts Article DTOs to database records and performs upsert operations.
      * Also creates/updates associated ArticleSource records for provider tracking.
-     * 
+     *
      * @param array $articleDTOs Array of ArticleDTO objects
      * @return Collection<int,Article> Collection of persisted Article models
      */
     public function upsertFromDTOs(array $articleDTOs): Collection
     {
         Log::info('[EloquentArticleRepository] Upserting ' . count($articleDTOs) . ' articles from DTOs');
-        if (empty($articleDTOs)) return collect();
+        if (empty($articleDTOs)) {
+            return collect();
+        }
 
         $now = now();
         $articleRows = [];
@@ -111,7 +113,7 @@ class EloquentArticleRepository implements ArticleRepository
             );
 
             $articles = Article::whereIn('url_sha1', array_column($articleRows, 'url_sha1'))
-                ->pluck('id','url_sha1');
+                ->pluck('id', 'url_sha1');
 
             if (!empty($articleSourceRows)) {
                 $toUpsert = array_map(function ($source) use ($articles) {
@@ -123,7 +125,7 @@ class EloquentArticleRepository implements ArticleRepository
                     ];
                 }, $articleSourceRows);
 
-                $toUpsert = array_values(array_filter($toUpsert, fn($r) => !empty($r['article_id'])));
+                $toUpsert = array_values(array_filter($toUpsert, fn ($r) => !empty($r['article_id'])));
 
                 ArticleSource::upsert(
                     $toUpsert,
@@ -138,9 +140,9 @@ class EloquentArticleRepository implements ArticleRepository
 
     /**
      * Build base query with filters
-     * 
+     *
      * Constructs Eloquent query builder with common filtering logic.
-     * 
+     *
      * @param array $filters Filter parameters for articles
      * @return Builder Eloquent query builder with applied filters
      */
@@ -162,8 +164,8 @@ class EloquentArticleRepository implements ArticleRepository
             });
         }
 
-        if (!empty($filters['from'])) { 
-            $query->where('published_at', '>=', $filters['from']); 
+        if (!empty($filters['from'])) {
+            $query->where('published_at', '>=', $filters['from']);
         }
 
         if (!empty($filters['to'])) {
@@ -188,8 +190,10 @@ class EloquentArticleRepository implements ArticleRepository
 
         if (!empty($filters['author'])) {
             $authors = is_array($filters['author']) ? $filters['author'] : [$filters['author']];
-            $query->where(function($w) use ($authors) {
-                foreach ($authors as $author) $w->orWhere('author', 'ilike', '%'.$author.'%');
+            $query->where(function ($w) use ($authors) {
+                foreach ($authors as $author) {
+                    $w->orWhere('author', 'ilike', '%'.$author.'%');
+                }
             });
         }
 
@@ -203,7 +207,7 @@ class EloquentArticleRepository implements ArticleRepository
 
     /**
      * Search articles with pagination
-     * 
+     *
      * @param array $filters Filter parameters (see baseQuery)
      * @param int $page Page number
      * @param int $pageSize Number of results per page

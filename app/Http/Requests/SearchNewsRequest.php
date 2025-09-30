@@ -25,7 +25,7 @@ use App\Http\Requests\BaseRequest;
 
 /**
  * Search News Request Validation
- * 
+ *
  * Validates parameters for searching articles across news providers.
  * Based on everything() method parameters across all providers.
  */
@@ -41,20 +41,20 @@ class SearchNewsRequest extends BaseRequest
         return [
             // Search term (required for most providers)
             'keyword'   => 'required|string|min:2|max:200',
-            
+
             // Date range (all providers support)
             'from'      => 'sometimes|date|date_format:Y-m-d',
             'to'        => 'sometimes|date|date_format:Y-m-d|after_or_equal:from',
-            
+
             // Filters
             'category'  => 'sometimes|string|max:50',
             'source'    => 'sometimes|string|max:200',
             'provider'  => 'sometimes|string|in:newsapi,guardian,nyt',
             'author'    => 'sometimes|string|max:100',
-            
+
             // Pagination
             'page'      => 'sometimes|integer|min:1|max:100',
-            'pageSize'  => 'sometimes|integer|min:1|max:100',            
+            'pageSize'  => 'sometimes|integer|min:1|max:100',
         ];
     }
 

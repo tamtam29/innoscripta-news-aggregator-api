@@ -9,16 +9,16 @@ use Illuminate\Support\Collection;
 
 /**
  * Article Repository Contract
- * 
+ *
  * Defines the interface for article data operations
- * 
+ *
  * @package App\Repositories\Contracts
  */
 interface ArticleRepository
 {
     /**
      * Insert or update articles from DTOs
-     * 
+     *
      * @param array $articleDTOs Array of Article DTOs
      * @return Collection Collection of persisted Article models
      */
@@ -26,7 +26,7 @@ interface ArticleRepository
 
     /**
      * Search articles with filters and pagination
-     * 
+     *
      * @param array $filters Search and filter parameters
      * @param int $page Page number
      * @param int $pageSize Items per page
@@ -36,7 +36,7 @@ interface ArticleRepository
 
     /**
      * Find article by ID
-     * 
+     *
      * @param int $id Article ID
      * @return Article|null
      */
@@ -44,7 +44,7 @@ interface ArticleRepository
 
     /**
      * Delete article by ID
-     * 
+     *
      * @param int $id Article ID
      * @return bool True if deleted, false if not found
      */

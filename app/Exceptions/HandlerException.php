@@ -10,16 +10,16 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Exception Handler
- * 
+ *
  * Handles different types of exceptions and converts them to standardized JSON responses
- * 
+ *
  * @package App\Exceptions
  */
 class HandlerException
 {
     /**
      * Handle exception and return standardized JSON response
-     * 
+     *
      * @param Throwable $e The exception to handle
      * @return JsonResponse Standardized JSON error response
      */

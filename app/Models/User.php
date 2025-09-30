@@ -9,16 +9,17 @@ use Illuminate\Notifications\Notifiable;
 
 /**
  * User Model
- * 
+ *
  * Represents application users with authentication capabilities.
  * Extends Laravel's Authenticatable for built-in authentication features.
- * 
+ *
  * @package App\Models
  */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use Notifiable;
 
     /**
      * The attributes that are mass assignable
@@ -56,7 +57,7 @@ class User extends Authenticatable
 
     /**
      * Get the news preferences for this user
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function newsPreferences()

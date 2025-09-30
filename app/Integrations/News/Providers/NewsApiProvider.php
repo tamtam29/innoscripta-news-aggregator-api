@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * NewsAPI.org Provider
- * 
+ *
  * Integration with NewsAPI.org for news articles.
- * 
+ *
  * @package App\Integrations\News\Providers
  * @see https://newsapi.org/docs
  */
@@ -26,17 +26,17 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * NewsAPI.org API key
-     * 
+     *
      * @var string|null
      */
     protected ?string $apiKey;
 
     public function __construct(
         private SourceService $sourceService
-    ) { 
+    ) {
         // Load API key from config, log warning if missing
         $this->apiKey = config('news.newsapi.key');
-        
+
         if (empty($this->apiKey)) {
             Log::warning('[NewsApiProvider] Missing API key configuration. NewsAPI integration will be skipped.');
         }
@@ -44,27 +44,27 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Check if the provider is properly configured
-     * 
+     *
      * @return bool
      */
     public function isConfigured(): bool
     {
         return !empty($this->apiKey);
     }
-    
+
     /**
      * Get provider key
-     * 
+     *
      * @return string
      */
-    public static function key(): string 
-    { 
-        return 'newsapi'; 
+    public static function key(): string
+    {
+        return 'newsapi';
     }
 
     /**
      * Fetch top headlines sorted by popularity
-     * 
+     *
      * @param array $params Request parameters for filtering headlines
      * @return Collection Collection of Article DTOs
      */
@@ -76,7 +76,7 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Search all articles sorted by publish date
-     * 
+     *
      * @param array $params Search parameters including keyword
      * @return Collection Collection of Article DTOs
      */
@@ -88,7 +88,7 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Resolve source ID from source name
-     * 
+     *
      * @param string|null $sourceName Source name to resolve
      * @return string|null NewsAPI source ID or null if not found
      */
@@ -111,7 +111,7 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Build query parameters for top-headlines endpoint
-     * 
+     *
      * @param array $params Request parameters
      * @return array Filtered query parameters for API call
      */
@@ -132,7 +132,7 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Build query parameters for everything endpoint
-     * 
+     *
      * @param array $params Request parameters
      * @return array Filtered query parameters for API call
      */
@@ -155,7 +155,7 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Execute API request with rate limiting and error handling
-     * 
+     *
      * @param string $endpoint API endpoint to call
      * @param array $params Query parameters for the request
      * @param string|null $category Optional category for articles
@@ -185,7 +185,7 @@ class NewsApiProvider implements NewsProvider
 
             $articles = data_get($response->json(), 'articles', []);
             Log::info('[NewsApiProvider] ' . $endpoint . ' fetched ' . count($articles) . ' articles');
-                
+
             return $this->formatArticles($articles, $category);
         } catch (\Exception $e) {
             Log::error('[NewsApiProvider] ' . $endpoint . ' request failed', [
@@ -198,19 +198,19 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Transform API response into Article DTOs
-     * 
+     *
      * @param array $articles Raw articles from API response
      * @param string|null $category Optional category for articles
      * @return Collection Collection of Article DTOs
      */
     private function formatArticles(array $articles, ?string $category = null): Collection
     {
-        return collect($articles)->map(fn($article) => $this->createArticle($article, $category));
+        return collect($articles)->map(fn ($article) => $this->createArticle($article, $category));
     }
 
     /**
      * Create Article DTO from NewsAPI data
-     * 
+     *
      * @param array $article Raw article data from API
      * @param string|null $category Optional category for the article
      * @return Article Article DTO instance
@@ -234,9 +234,9 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Fetch all available sources from NewsAPI
-     * 
+     *
      * Used for seeding/updating source database
-     * 
+     *
      * @return Collection Collection of source data
      */
     public function fetchSources(): Collection
@@ -255,7 +255,7 @@ class NewsApiProvider implements NewsProvider
 
             $sources = data_get($response->json(), 'sources', []);
             Log::info('[NewsApiProvider] Fetched ' . count($sources) . ' sources from API');
-            
+
             return collect($sources);
         } catch (\Exception $e) {
             Log::error('[NewsApiProvider] Failed to fetch sources', [

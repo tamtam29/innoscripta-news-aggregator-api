@@ -11,7 +11,8 @@ class SourceSeeder extends Seeder
 {
     public function __construct(
         private SourceService $sourceService
-    ) {}
+    ) {
+    }
 
     /**
      * Run the database seeds.
@@ -19,13 +20,13 @@ class SourceSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('Seeding news sources...');
-        
+
         // Fetch live sources from NewsAPI
         $this->seedNewsApiSources();
-        
+
         // Add static sources for other providers
         $this->seedStaticSources();
-        
+
         $totalSources = $this->sourceService->getActiveSourcesCount();
         $this->command->info("Seeded {$totalSources} news sources successfully.");
     }
@@ -36,17 +37,17 @@ class SourceSeeder extends Seeder
     private function seedNewsApiSources(): void
     {
         $this->command->info('Fetching sources from NewsAPI...');
-        
+
         try {
             $newsApiProvider = app(NewsApiProvider::class);
             $sources = $newsApiProvider->fetchSources();
-            
+
             if ($sources->isEmpty()) {
                 $this->command->warn('No sources fetched from NewsAPI - using fallback sources');
                 $this->seedNewsApiFallback();
                 return;
             }
-            
+
             $count = 0;
             foreach ($sources as $sourceData) {
                 $this->sourceService->updateOrCreateSource(
@@ -67,9 +68,9 @@ class SourceSeeder extends Seeder
                 );
                 $count++;
             }
-            
+
             $this->command->info("Seeded {$count} NewsAPI sources from live API");
-            
+
         } catch (\Exception $e) {
             $this->command->error('Failed to fetch from NewsAPI: ' . $e->getMessage());
         }
@@ -112,7 +113,7 @@ class SourceSeeder extends Seeder
                 $source
             );
         }
-        
+
         $this->command->info('Seeded ' . count($staticSources) . ' static sources (Guardian, NYT)');
     }
 }

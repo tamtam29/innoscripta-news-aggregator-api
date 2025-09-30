@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 /**
  * Base Controller
- * 
+ *
  * @package App\Http\Controllers
- * 
+ *
  * @OA\Info(
  *     title="News Aggregator API",
  *     version="1.0.0",
@@ -16,7 +16,7 @@ namespace App\Http\Controllers;
  *         email="aditiatama@gmail.com"
  *     )
  * )
- * 
+ *
  * @OA\Server(
  *     url="/api",
  *     description="News Aggregator API Server"

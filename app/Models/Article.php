@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Article Model
- * 
+ *
  * @package App\Models
- * 
+ *
  * @OA\Schema(
  *     schema="Article",
  *     title="Article",
@@ -48,7 +48,7 @@ class Article extends Model
 
     /**
      * Get the article sources for this article
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function article_sources()
@@ -58,7 +58,7 @@ class Article extends Model
 
     /**
      * Get the source that this article belongs to
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function source()

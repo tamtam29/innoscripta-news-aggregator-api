@@ -6,17 +6,17 @@ use Carbon\Carbon;
 
 /**
  * Article Data Transfer Object
- * 
+ *
  * Represents a standardized news article structure that normalizes data
  * from different news providers into a consistent format for the application.
- * 
+ *
  * @package App\Integrations\News\DTOs
  */
 class Article
 {
     /**
      * Create a new Article instance
-     * 
+     *
      * @param string $title The article headline/title
      * @param string|null $description Brief description or excerpt of the article
      * @param string $url Direct link to the full article
@@ -41,5 +41,6 @@ class Article
         public ?string $category,
         public ?string $externalId,
         public ?array $metadata,
-    ) {}
+    ) {
+    }
 }

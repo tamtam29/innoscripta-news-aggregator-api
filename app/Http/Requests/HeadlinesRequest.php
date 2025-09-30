@@ -23,7 +23,7 @@ use App\Http\Requests\BaseRequest;
 
 /**
  * Headlines Request Validation
- * 
+ *
  * Validates parameters for fetching top headlines from news providers.
  * Based on topHeadlines() method parameters across all providers.
  */
@@ -42,11 +42,11 @@ class HeadlinesRequest extends BaseRequest
             'source'    => 'sometimes|string|max:200',
             'provider'  => 'sometimes|string|in:newsapi,guardian,nyt',
             'author'    => 'sometimes|string|max:100',
-            
+
             // Date range (Guardian, NYT support)
             'from'      => 'sometimes|date|date_format:Y-m-d',
             'to'        => 'sometimes|date|date_format:Y-m-d|after_or_equal:from',
-            
+
             // Pagination
             'page'      => 'sometimes|integer|min:1|max:100',
             'pageSize'  => 'sometimes|integer|min:1|max:100',

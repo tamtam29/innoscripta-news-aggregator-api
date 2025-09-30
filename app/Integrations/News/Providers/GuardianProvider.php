@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * The Guardian API Provider
- * 
+ *
  * Integration with The Guardian's Open Platform API.
- * 
+ *
  * @package App\Integrations\News\Providers
  * @see https://open-platform.theguardian.com/documentation/
  */
@@ -25,39 +25,39 @@ class GuardianProvider implements NewsProvider
 
     /**
      * The Guardian API key
-     * 
+     *
      * @var string|null
      */
     protected ?string $apiKey;
 
-    public function __construct() 
-    { 
+    public function __construct()
+    {
         // Load API key from config, log warning if missing
         $this->apiKey = config('news.guardian.key');
-        
+
         if (empty($this->apiKey)) {
             Log::warning('[GuardianProvider] Missing API key configuration. Guardian integration will be skipped.');
         }
     }
-    
+
     /**
      * Check if the provider is properly configured
-     * 
+     *
      * @return bool
      */
     public function isConfigured(): bool
     {
         return !empty($this->apiKey);
     }
-    
+
     /**
      * Get provider key
-     * 
+     *
      * @return string
      */
-    public static function key(): string 
-    { 
-        return 'guardian'; 
+    public static function key(): string
+    {
+        return 'guardian';
     }
 
     /**
@@ -122,7 +122,7 @@ class GuardianProvider implements NewsProvider
 
             $results = data_get($response->json(), 'response.results', []);
             Log::info('[GuardianProvider] ' . $endpoint . ' fetched ' . count($results) . ' articles');
-                
+
             return $this->formatArticles($results);
         } catch (\Exception $e) {
             Log::error('[GuardianProvider] ' . $endpoint . ' request failed', [
@@ -138,7 +138,7 @@ class GuardianProvider implements NewsProvider
      */
     private function formatArticles(array $articles): Collection
     {
-        return collect($articles)->map(fn($article) => $this->createArticle($article));
+        return collect($articles)->map(fn ($article) => $this->createArticle($article));
     }
 
     /**

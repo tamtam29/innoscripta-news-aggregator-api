@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * New York Times API Provider
- * 
+ *
  * Integration with NYT Article Search and Top Stories APIs.
  * Rate limit: 1000 requests/day, 5 requests/minute.
- * 
+ *
  * @package App\Integrations\News\Providers
  * @see https://developer.nytimes.com/docs
  */
@@ -26,16 +26,16 @@ class NytProvider implements NewsProvider
 
     /**
      * New York Times API key
-     * 
+     *
      * @var string|null
      */
     protected ?string $apiKey;
 
-    public function __construct() 
-    { 
+    public function __construct()
+    {
         // Load API key from config, log warning if missing
         $this->apiKey = config('news.nyt.key');
-        
+
         if (empty($this->apiKey)) {
             Log::warning('[NytProvider] Missing API key configuration. NYT integration will be skipped.');
         }
@@ -43,7 +43,7 @@ class NytProvider implements NewsProvider
 
     /**
      * Check if the provider is properly configured
-     * 
+     *
      * @return bool
      */
     public function isConfigured(): bool
@@ -53,12 +53,12 @@ class NytProvider implements NewsProvider
 
     /**
      * Get provider key
-     * 
+     *
      * @return string
      */
-    public static function key(): string 
-    { 
-        return 'nyt'; 
+    public static function key(): string
+    {
+        return 'nyt';
     }
 
     /**
@@ -132,7 +132,7 @@ class NytProvider implements NewsProvider
 
             $articles = data_get($response->json(), $dataPath, []);
             Log::info('[NytProvider] ' . $endpoint . ' fetched ' . count($articles) . ' articles');
-                
+
             return $this->formatArticles($articles);
         } catch (\Exception $e) {
             Log::error('[NytProvider] ' . $endpoint . ' request failed', [
@@ -148,7 +148,7 @@ class NytProvider implements NewsProvider
      */
     private function formatArticles(array $articles): Collection
     {
-        return collect($articles)->map(fn($article) => $this->createArticle($article));
+        return collect($articles)->map(fn ($article) => $this->createArticle($article));
     }
 
     /**
@@ -201,15 +201,15 @@ class NytProvider implements NewsProvider
     private function extractImageUrl(array $article): ?string
     {
         $multimedia = $article['multimedia'] ?? [];
-        
+
         if (is_array($multimedia) && isset($multimedia['default']['url'])) {
             return $multimedia['default']['url'];
         }
-        
+
         if (is_array($multimedia)) {
             return collect($multimedia)->firstWhere('format', 'Super Jumbo')['url'] ?? null;
         }
-        
+
         return null;
     }
 
