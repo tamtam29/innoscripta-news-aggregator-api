@@ -141,7 +141,7 @@ class EloquentArticleRepository implements ArticleRepository
      * 
      * Constructs Eloquent query builder with common filtering logic.
      * 
-     * @param array $filters
+     * @param array $filters Filter parameters for articles
      * @return Builder Eloquent query builder with applied filters
      */
     private function baseQuery(array $filters): Builder

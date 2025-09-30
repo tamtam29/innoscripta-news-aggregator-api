@@ -11,14 +11,16 @@ use Illuminate\Support\Collection;
  * Article Repository Contract
  * 
  * Defines the interface for article data operations
+ * 
+ * @package App\Repositories\Contracts
  */
 interface ArticleRepository
 {
     /**
      * Insert or update articles from DTOs
      * 
-     * @param array<int,\App\News\DTOs\Article> $articleDTOs
-     * @return Collection
+     * @param array $articleDTOs Array of Article DTOs
+     * @return Collection Collection of persisted Article models
      */
     public function upsertFromDTOs(array $articleDTOs): Collection;
 
@@ -28,7 +30,7 @@ interface ArticleRepository
      * @param array $filters Search and filter parameters
      * @param int $page Page number
      * @param int $pageSize Items per page
-     * @return LengthAwarePaginator
+     * @return LengthAwarePaginator Paginated article results
      */
     public function search(array $filters, int $page, int $pageSize): LengthAwarePaginator;
 

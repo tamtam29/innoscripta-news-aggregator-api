@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Article;
 use App\Repositories\EloquentArticleRepository;
 use App\Integrations\News\ProviderAggregator;
+use App\Jobs\FetchNewsArticles;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
@@ -138,20 +139,32 @@ class NewsService
         $shouldFetch = !$lastFetchTime || 
                       Carbon::parse($lastFetchTime)->lt(Carbon::now()->subMinutes($freshMinutes));
 
-        // Only fetch from providers if data is stale or we have no results
-        if ($shouldFetch && ($paginator->total() === 0 || $page === 1)) {
-            Log::info("[NewsService] Fetching fresh content from providers", [
-                'mode' => $mode,
-                'cache_key' => $cacheKey,
-                'last_fetch' => $lastFetchTime,
-                'stale_data' => $paginator->total() > 0 ? 'yes' : 'no'
-            ]);
-
+        if ($shouldFetch) {
             $params = array_merge($params, ['page' => $page, 'pageSize' => $pageSize]);
-            $this->fetchFromProviders($params, $mode, $cacheKey, $freshMinutes);
-
-            // Get updated results after fetching
-            $paginator = $this->articleRepository->search($params, $page, $pageSize);
+            
+            if ($paginator->total() === 0) {
+                // No existing data - wait for fresh fetch synchronously
+                Log::info("[NewsService] No existing data, fetching synchronously from providers", [
+                    'mode' => $mode,
+                    'cache_key' => $cacheKey,
+                    'last_fetch' => $lastFetchTime
+                ]);
+                
+                $this->fetchFromProviders($params, $mode, $cacheKey, $freshMinutes);
+                
+                // Get updated results after fetching
+                $paginator = $this->articleRepository->search($params, $page, $pageSize);
+            } else {
+                // Existing data available - fetch in background via queue
+                Log::info("[NewsService] Existing data available, dispatching background fetch", [
+                    'mode' => $mode,
+                    'cache_key' => $cacheKey,
+                    'existing_total' => $paginator->total(),
+                    'last_fetch' => $lastFetchTime
+                ]);
+                
+                FetchNewsArticles::dispatch($params, $mode, $cacheKey, $freshMinutes)->onQueue('news');                
+            }
         } else {
             Log::info("[NewsService] Serving from database: {$paginator->total()} articles", [
                 'fresh_until' => $lastFetchTime ? Carbon::parse($lastFetchTime)->addMinutes($freshMinutes)->toISOString() : 'never_fetched'

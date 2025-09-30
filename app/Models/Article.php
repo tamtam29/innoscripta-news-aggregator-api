@@ -46,11 +46,21 @@ class Article extends Model
         'published_at' => 'datetime',
     ];
 
-    public function article_sources() 
-    { 
-        return $this->hasMany(ArticleSource::class); 
+    /**
+     * Get the article sources for this article
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function article_sources()
+    {
+        return $this->hasMany(ArticleSource::class);
     }
 
+    /**
+     * Get the source that this article belongs to
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
     public function source()
     {
         return $this->belongsTo(Source::class);

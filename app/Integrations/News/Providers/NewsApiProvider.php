@@ -64,6 +64,9 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Fetch top headlines sorted by popularity
+     * 
+     * @param array $params Request parameters for filtering headlines
+     * @return Collection Collection of Article DTOs
      */
     public function topHeadlines(array $params = []): Collection
     {
@@ -73,6 +76,9 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Search all articles sorted by publish date
+     * 
+     * @param array $params Search parameters including keyword
+     * @return Collection Collection of Article DTOs
      */
     public function searchArticles(array $params = []): Collection
     {
@@ -82,6 +88,9 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Resolve source ID from source name
+     * 
+     * @param string|null $sourceName Source name to resolve
+     * @return string|null NewsAPI source ID or null if not found
      */
     private function resolveSourceId(?string $sourceName): ?string
     {
@@ -102,6 +111,9 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Build query parameters for top-headlines endpoint
+     * 
+     * @param array $params Request parameters
+     * @return array Filtered query parameters for API call
      */
     private function buildTopHeadlinesParams(array $params): array
     {
@@ -120,6 +132,9 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Build query parameters for everything endpoint
+     * 
+     * @param array $params Request parameters
+     * @return array Filtered query parameters for API call
      */
     private function buildEverythingParams(array $params): array
     {
@@ -140,6 +155,11 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Execute API request with rate limiting and error handling
+     * 
+     * @param string $endpoint API endpoint to call
+     * @param array $params Query parameters for the request
+     * @param string|null $category Optional category for articles
+     * @return Collection Collection of Article DTOs
      */
     private function fetchArticles(string $endpoint, array $params, ?string $category = null): Collection
     {
@@ -178,6 +198,10 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Transform API response into Article DTOs
+     * 
+     * @param array $articles Raw articles from API response
+     * @param string|null $category Optional category for articles
+     * @return Collection Collection of Article DTOs
      */
     private function formatArticles(array $articles, ?string $category = null): Collection
     {
@@ -186,6 +210,10 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Create Article DTO from NewsAPI data
+     * 
+     * @param array $article Raw article data from API
+     * @param string|null $category Optional category for the article
+     * @return Article Article DTO instance
      */
     private function createArticle(array $article, ?string $category = null): Article
     {
@@ -206,7 +234,10 @@ class NewsApiProvider implements NewsProvider
 
     /**
      * Fetch all available sources from NewsAPI
+     * 
      * Used for seeding/updating source database
+     * 
+     * @return Collection Collection of source data
      */
     public function fetchSources(): Collection
     {

@@ -20,6 +20,8 @@ trait RateLimitTrait
 {
     /**
      * Rate limit configuration for each provider
+     * 
+     * @return array Rate limits configuration by provider
      */
     protected function getRateLimits(): array
     {
@@ -44,6 +46,8 @@ trait RateLimitTrait
 
     /**
      * Check if provider is currently rate limited
+     * 
+     * @return bool True if rate limited, false otherwise
      */
     protected function isRateLimited(): bool
     {
@@ -82,6 +86,8 @@ trait RateLimitTrait
 
     /**
      * Increment rate limit counters
+     * 
+     * @return void
      */
     protected function incrementRateLimit(): void
     {
@@ -112,6 +118,8 @@ trait RateLimitTrait
 
     /**
      * Get provider name for logging
+     * 
+     * @return string Provider class name
      */
     protected function getProviderName(): string
     {
@@ -120,6 +128,8 @@ trait RateLimitTrait
 
     /**
      * Add throttling delay between requests
+     * 
+     * @return void
      */
     protected function throttleRequest(): void
     {

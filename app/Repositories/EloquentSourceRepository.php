@@ -15,6 +15,10 @@ class EloquentSourceRepository implements SourceRepository
 {
     /**
      * Get source by display name
+     * 
+     * @param string $name Source name to search for
+     * @param string $provider Provider name (default: 'newsapi')
+     * @return Source|null
      */
     public function findByName(string $name, string $provider = 'newsapi'): ?Source
     {
@@ -23,16 +27,18 @@ class EloquentSourceRepository implements SourceRepository
                       ->orWhere('source_id', 'ilike', $name);
             })
             ->where('provider', $provider)
-            ->where('is_active', true)
+            ->active()
             ->first();
     }
 
     /**
      * Get all source names across providers
+     * 
+     * @return array Array of sources with source_id and source_name
      */
     public function getAllSourceNames(): array
     {
-        return Source::where('is_active', true)
+        return Source::active()
             ->get(['source_id', 'name'])
             ->map(function ($source) {
                 return [
@@ -45,6 +51,10 @@ class EloquentSourceRepository implements SourceRepository
 
     /**
      * Create or update source
+     * 
+     * @param array $attributes Attributes to match for existing record
+     * @param array $values Values to update or create with
+     * @return Source
      */
     public function updateOrCreate(array $attributes, array $values): Source
     {
@@ -53,9 +63,11 @@ class EloquentSourceRepository implements SourceRepository
 
     /**
      * Get total count of active sources
+     * 
+     * @return int Number of active sources
      */
     public function getActiveCount(): int
     {
-        return Source::where('is_active', true)->count();
+        return Source::active()->count();
     }
 }
