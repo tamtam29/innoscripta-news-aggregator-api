@@ -10,29 +10,56 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * The Guardian API Provider
+ * 
+ * Integration with The Guardian's Open Platform API.
+ * 
+ * @package App\Integrations\News\Providers
+ * @see https://open-platform.theguardian.com/documentation/
+ */
 class GuardianProvider implements NewsProvider
 {
+    /**
+     * The Guardian API key
+     * 
+     * @var string
+     */
     protected string $apiKey;
 
     public function __construct() { 
         $this->apiKey = (string) config('news.guardian.key'); 
     }
     
+    /**
+     * Get unique identifier for this provider
+     * 
+     * @return string Provider key 'guardian'
+     */
     public static function key(): string { 
         return 'guardian'; 
     }
 
+    /**
+     * Fetch top headlines from The Guardian
+     * 
+     * @param array $params Query parameters:
+     *                      - category: Guardian section ID
+     *                      - from/to: Date range (YYYY-MM-DD)
+     *                      - page: Page number
+     *                      - pageSize: Results per page
+     * @return Collection<int,Article>
+     */
     public function topHeadlines(array $params = []): Collection
     {
         $params = array_filter([
-            'q'           => $params['keyword'] ?? null,
             'section'     => $params['category'] ?? null,
             'from-date'   => $params['from'] ?? null,
             'to-date'     => $params['to'] ?? null,
-            'order-by'    => $params['order'] ?? 'relevance',
-            'show-fields' => 'thumbnail,trailText,byline',
             'page'        => $params['page'] ?? 1,
             'page-size'   => $params['pageSize'] ?? 20,
+            'show-fields' => 'thumbnail,trailText,byline',
+            'order-by'    => 'relevance',
             'api-key'     => $this->apiKey,
         ]);
 
@@ -42,10 +69,11 @@ class GuardianProvider implements NewsProvider
                 ->throw();
 
             $results = data_get($res->json(), 'response.results', []);
-
+            Log::info('[GuardianProvider] topHeadlines fetched ' . count($results) . ' articles');
+                
             return $this->formatArticles($results);
         } catch (\Exception $e) {
-            Log::error('GuardianProvider - topHeadlines request failed', [
+            Log::error('[GuardianProvider] topHeadlines request failed', [
                 'message' => $e->getMessage(),
                 'params' => $params
             ]);
@@ -54,11 +82,27 @@ class GuardianProvider implements NewsProvider
         }
     }
 
+    /**
+     * Search all Guardian content (ordered by newest)
+     * 
+     * @param array $params Same parameters as topHeadlines
+     * @return Collection<int,Article>
+     */
     public function everything(array $params = []): Collection
     {
         return $this->topHeadlines(array_merge($params, ['order-by' => 'newest']));
     }
 
+    /**
+     * Transform Guardian API response into Article DTOs
+     * 
+     * Maps Guardian fields to standardized Article structure:
+     * webTitle → title, fields.trailText → description, etc.
+     * 
+     * @param array $articles Raw Guardian API data
+     * @param string|null $category Optional category override
+     * @return Collection<int,Article>
+     */
     private function formatArticles(array $articles, ?string $category = null): Collection
     {
         return collect($articles)->map(function ($article) use ($category) {

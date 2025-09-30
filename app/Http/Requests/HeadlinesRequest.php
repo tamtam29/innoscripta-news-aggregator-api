@@ -5,12 +5,12 @@ namespace App\Http\Requests;
 use App\Http\Requests\BaseRequest;
 
 /**
- * Search News Request Validation
+ * Headlines Request Validation
  * 
- * Validates parameters for searching articles across news providers.
- * Based on everything() method parameters across all providers.
+ * Validates parameters for fetching top headlines from news providers.
+ * Based on topHeadlines() method parameters across all providers.
  */
-class SearchNewsRequest extends BaseRequest
+class HeadlinesRequest extends BaseRequest
 {
     /**
      * Get the validation rules that apply to the request.
@@ -20,22 +20,19 @@ class SearchNewsRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            // Search term (required for most providers)
-            'keyword'   => 'required|string|min:2|max:200',
-            
-            // Date range (all providers support)
-            'from'      => 'sometimes|date|date_format:Y-m-d',
-            'to'        => 'sometimes|date|date_format:Y-m-d|after_or_equal:from',
-            
             // Filters
             'category'  => 'sometimes|string|max:50',
             'publisher' => 'sometimes|string|max:200',
             'provider'  => 'sometimes|string|in:newsapi,guardian,nyt',
             'author'    => 'sometimes|string|max:100',
             
+            // Date range (Guardian, NYT support)
+            'from'      => 'sometimes|date|date_format:Y-m-d',
+            'to'        => 'sometimes|date|date_format:Y-m-d|after_or_equal:from',
+            
             // Pagination
             'page'      => 'sometimes|integer|min:1|max:100',
-            'pageSize'  => 'sometimes|integer|min:1|max:100',            
+            'pageSize'  => 'sometimes|integer|min:1|max:100',
         ];
     }
 
@@ -47,8 +44,6 @@ class SearchNewsRequest extends BaseRequest
     public function messages(): array
     {
         return [
-            'keyword.required' => 'Keyword is required for search',
-            'keyword.min' => 'Keyword must be at least 2 characters',
             'provider.in' => 'Provider must be one of: newsapi, guardian, nyt',
             'to.after_or_equal' => 'End date must be after or equal to start date',
         ];

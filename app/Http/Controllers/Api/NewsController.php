@@ -3,31 +3,72 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\HeadlinesRequest;
 use App\Http\Requests\SearchNewsRequest;
-use App\Integrations\News\ProviderAggregator;
+use App\Http\Resources\ArticleCollection;
 use App\Services\NewsService;
 use App\Services\NewsPreferenceService;
-use Illuminate\Http\Request;
 
+/**
+ * News API Controller
+ * 
+ * Handles news article retrieval endpoints for headlines and search.
+ * 
+ * @package App\Http\Controllers\Api
+ */
 class NewsController extends Controller
 {
     public function __construct(
         private NewsService $newsService,
         private NewsPreferenceService $newsPreferenceService,
-        private ProviderAggregator $providerAggregator,
     ) {}
 
-    public function index(SearchNewsRequest $request)
+    /**
+     * Get top headlines
+     * 
+     * @param HeadlinesRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function headlines(HeadlinesRequest $request)
     {
         $params = $request->validated();
-
-        $page     = (int) ($params['page'] ?? 1);
+        
+        $page = (int) ($params['page'] ?? 1);
         $pageSize = (int) ($params['pageSize'] ?? 20);
 
-        $paginator = $this->newsService->search($params, $page, $pageSize);
+        $paginator = $this->newsService->getHeadlines($params, $page, $pageSize);
 
+        return $this->formatResponse($paginator);
+    }
+
+    /**
+     * Search articles
+     * 
+     * @param SearchNewsRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function search(SearchNewsRequest $request)
+    {
+        $params = $request->validated();
+        
+        $page = (int) ($params['page'] ?? 1);
+        $pageSize = (int) ($params['pageSize'] ?? 20);
+
+        $paginator = $this->newsService->searchArticles($params, $page, $pageSize);
+
+        return $this->formatResponse($paginator);
+    }
+
+    /**
+     * Format paginated response
+     * 
+     * @param \Illuminate\Contracts\Pagination\LengthAwarePaginator $paginator
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function formatResponse($paginator)
+    {
         return response()->json([
-            'data' => $paginator->getCollection(),
+            'data' => new ArticleCollection($paginator->getCollection()),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'per_page'     => $paginator->perPage(),

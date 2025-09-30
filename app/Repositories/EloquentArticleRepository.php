@@ -13,11 +13,28 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Eloquent Article Repository
+ * 
+ * Database repository implementation for managing articles using Laravel's Eloquent ORM.
+ * Handles article storage, retrieval, and search operations with provider integration.
+ * 
+ * @package App\Repositories
+ */
 class EloquentArticleRepository implements ArticleRepository
 {
+    /**
+     * Insert or update articles from DTOs
+     * 
+     * Converts Article DTOs to database records and performs upsert operations.
+     * Also creates/updates associated ArticleSource records for provider tracking.
+     * 
+     * @param array $articleDTOs Array of ArticleDTO objects
+     * @return Collection<int,Article> Collection of persisted Article models
+     */
     public function upsertFromDTOs(array $articleDTOs): Collection
     {
-        Log::info('Upserting ' . count($articleDTOs) . ' articles from DTOs');
+        Log::info('[EloquentArticleRepository] Upserting ' . count($articleDTOs) . ' articles from DTOs');
         if (empty($articleDTOs)) return collect();
 
         $now = now();
@@ -68,10 +85,8 @@ class EloquentArticleRepository implements ArticleRepository
                         'metadata'    => json_encode($source['metadata']),
                     ];
                 }, $articleSourceRows);
-                Log::info('Prepared ' . count($toUpsert) . ' article sources for upsert');
 
                 $toUpsert = array_values(array_filter($toUpsert, fn($r) => !empty($r['article_id'])));
-                Log::info('Upserting ' . count($toUpsert) . ' article sources');
 
                 ArticleSource::upsert(
                     $toUpsert,
@@ -84,6 +99,20 @@ class EloquentArticleRepository implements ArticleRepository
         return Article::whereIn('url_sha1', array_column($articleRows, 'url_sha1'))->get();
     }
 
+    /**
+     * Build base query with filters
+     * 
+     * Constructs Eloquent query builder with common filtering logic.
+     * 
+     * @param array $filters Filter parameters:
+     *                       - keyword: Search in title, description, author, publisher
+     *                       - from/to: Date range for published_at
+     *                       - provider: Filter by news provider(s)
+     *                       - publisher: Filter by publisher(s)
+     *                       - author: Filter by author(s)
+     *                       - category: Filter by category(ies)
+     * @return Builder Eloquent query builder with applied filters
+     */
     private function baseQuery(array $filters): Builder
     {
         $query = Article::query();
@@ -131,11 +160,25 @@ class EloquentArticleRepository implements ArticleRepository
         return $query->orderByDesc('published_at')->orderByDesc('id');
     }
 
+    /**
+     * Search articles with pagination
+     * 
+     * @param array $filters Filter parameters (see baseQuery)
+     * @param int $page Page number
+     * @param int $pageSize Number of results per page
+     * @return LengthAwarePaginator Paginated article results
+     */
     public function search(array $filters, int $page, int $pageSize): LengthAwarePaginator
     {
         return $this->baseQuery($filters)->paginate($pageSize, ['*'], 'page', $page);
     }
 
+    /**
+     * Get the newest publication date from filtered results
+     * 
+     * @param array $filters Filter parameters (see baseQuery)
+     * @return Carbon|null Latest published_at date or null if no results
+     */
     public function newestPublishedAt(array $filters): ?Carbon
     {
         $row = $this->baseQuery($filters)->select('published_at')->first();

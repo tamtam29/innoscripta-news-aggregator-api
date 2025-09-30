@@ -10,18 +10,44 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * New York Times API Provider
+ * 
+ * Integration with NYT Article Search and Top Stories APIs.
+ * Rate limit: 1000 requests/day, 5 requests/minute.
+ * 
+ * @package App\Integrations\News\Providers
+ * @see https://developer.nytimes.com/docs
+ */
 class NytProvider implements NewsProvider
 {
+    /**
+     * New York Times API key
+     * 
+     * @var string
+     */
     protected string $apiKey;
 
     public function __construct() { 
         $this->apiKey = (string) config('news.nyt.key'); 
     }
 
+    /**
+     * Get provider key
+     * 
+     * @return string
+     */
     public static function key(): string { 
         return 'nyt'; 
     }
 
+    /**
+     * Fetch top stories from NYT
+     * 
+     * @param array $params Query parameters:
+     *                      - category: NYT section (home, world, business, etc.)
+     * @return Collection<int,Article>
+     */
     public function topHeadlines(array $params = []): Collection
     {
         $category = $params['category'] ?? 'home';
@@ -35,10 +61,11 @@ class NytProvider implements NewsProvider
                 ->throw();
 
             $results = $res->json()['results'] ?? [];
+            Log::info('[NytProvider] topHeadlines fetched ' . count($results) . ' articles');
 
             return $this->formatArticles($results);
         } catch (\Exception $e) {
-            Log::error('NytProvider - topHeadlines request failed', [
+            Log::error('[NytProvider] topHeadlines request failed', [
                 'message' => $e->getMessage(),
                 'params' => $params
             ]);
@@ -47,6 +74,15 @@ class NytProvider implements NewsProvider
         }
     }
 
+    /**
+     * Search NYT article archive
+     * 
+     * @param array $params Query parameters:
+     *                      - keyword: Search term
+     *                      - from/to: Date range (YYYY-MM-DD)
+     *                      - page: Page number
+     * @return Collection<int,Article>
+     */
     public function everything(array $params = []): Collection
     {
         $params = array_filter([
@@ -54,6 +90,7 @@ class NytProvider implements NewsProvider
             'begin_date' => isset($params['from']) ? str_replace('-', '', $params['from']) : null,
             'end_date'   => isset($params['to']) ? str_replace('-', '', $params['to']) : null,
             'page'       => max(0, ($params['page'] ?? 1) - 1),
+            'sort'       => 'newest',
             'api-key'    => $this->apiKey,
         ]);
 
@@ -63,10 +100,11 @@ class NytProvider implements NewsProvider
                 ->throw();
 
             $docs = data_get($res->json(), 'response.docs', []);
+            Log::info('[NytProvider] everything fetched ' . count($docs) . ' articles');
 
             return $this->formatArticles($docs);
         } catch (\Exception $e) {
-            Log::error('NytProvider - everything request failed', [
+            Log::error('[NytProvider] everything request failed', [
                 'message' => $e->getMessage(),
                 'params' => $params
             ]);
@@ -75,6 +113,15 @@ class NytProvider implements NewsProvider
         }
     }
 
+    /**
+     * Transform NYT API response into Article DTOs
+     * 
+     * Handles both Top Stories and Article Search response formats.
+     * Maps NYT fields to standardized Article structure.
+     * 
+     * @param array $articles Raw NYT API data
+     * @return Collection<int,Article>
+     */
     private function formatArticles(array $articles): Collection
     {
         return collect($articles)->map(function ($article) {

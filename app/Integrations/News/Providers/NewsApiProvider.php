@@ -10,27 +10,55 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * NewsAPI.org Provider
+ * 
+ * Integration with NewsAPI.org for news articles.
+ * 
+ * @package App\Integrations\News\Providers
+ * @see https://newsapi.org/docs
+ */
 class NewsApiProvider implements NewsProvider
 {
-    protected string $articlepiKey;
+    /**
+     * NewsAPI.org API key
+     * 
+     * @var string
+     */
+    protected string $apiKey;
 
     public function __construct() { 
         $this->apiKey = (string) config('news.newsapi.key'); 
     }
     
+    /**
+     * Get provider key
+     * 
+     * @return string
+     */
     public static function key(): string { 
         return 'newsapi'; 
     }
 
+    /**
+     * Fetch top headlines from NewsAPI
+     * 
+     * @param array $params Query parameters:
+     *                      - category: Category
+     *                      - publisher: Comma-separated news sources
+     *                      - page: Page number
+     *                      - pageSize: Results per page (max: 100)
+     * @return Collection<int,Article>
+     */
     public function topHeadlines(array $params = []): Collection
     {
         $params = array_filter([
-            'q'        => $params['keyword'] ?? null,
-            'country'  => $params['country'] ?? null,
             'category' => $params['category'] ?? null,
             'sources'  => $params['publisher'] ?? null,
             'page'     => $params['page'] ?? 1,
             'pageSize' => $params['pageSize'] ?? 20,
+            'sortBy'   => 'popularity',
+            'country'  => 'us',
             'apiKey'   => $this->apiKey,
         ]);
 
@@ -40,12 +68,14 @@ class NewsApiProvider implements NewsProvider
                 ->throw();
 
             $json = $res->json();
+
+            Log::info('[NewsApiProvider] topHeadlines fetched ' . count($json['articles'] ?? []) . ' articles');
             $category = Taxonomy::canonicalizeCategory($params['category'] ?? null);
 
             return $this->formatArticles($json['articles'] ?? [], $category);
         } catch (\Exception $e) {
-            Log::error('NewsApiProvider - topHeadlines request failed', [
-                'message' => $e->getMessage(),
+            Log::error('[NewsApiProvider] topHeadlines request failed', [
+                'message' => $e,
                 'params' => $params
             ]);
 
@@ -53,17 +83,28 @@ class NewsApiProvider implements NewsProvider
         }
     }
 
+    /**
+     * Search all articles from NewsAPI
+     * 
+     * @param array $params Query parameters:
+     *                      - keyword: Search term (required)
+     *                      - publisher: Specific news sources
+     *                      - from/to: Date range (YYYY-MM-DD)
+     *                      - page: Page number
+     *                      - pageSize: Results per page (max: 100)
+     * @return Collection<int,Article>
+     */
     public function everything(array $params = []): Collection
     {
         $params = array_filter([
             'q'        => $params['keyword'] ?? null,
+            'sources'  => $params['publisher'] ?? null,
             'from'     => $params['from'] ?? null,
             'to'       => $params['to'] ?? null,
-            'sources'  => $params['publisher'] ?? null,
-            'language' => $params['language'] ?? 'en',
-            'sortBy'   => $params['sortBy'] ?? 'publishedAt',
             'page'     => $params['page'] ?? 1,
             'pageSize' => $params['pageSize'] ?? 20,
+            'sortBy'   => 'publishedAt',
+            'language' => 'en',
             'apiKey'   => $this->apiKey,
         ]);
 
@@ -73,10 +114,11 @@ class NewsApiProvider implements NewsProvider
                 ->throw();
 
             $json = $res->json();
+            Log::info('[NewsApiProvider] everything fetched ' . count($json['articles'] ?? []) . ' articles');
 
-            return $this->formatArticles($json['articles'] ?? []);
+            return $this->formatArticles($json['articles'] ?? [], null);
         } catch (\Exception $e) {
-            Log::error('NewsApiProvider - everything request failed', [
+            Log::error('[NewsApiProvider] everything request failed', [
                 'message' => $e->getMessage(),
                 'params' => $params
             ]);
@@ -85,6 +127,15 @@ class NewsApiProvider implements NewsProvider
         }
     }
 
+    /**
+     * Transform NewsAPI response into Article DTOs
+     * 
+     * Maps NewsAPI fields to standardized Article structure.
+     * 
+     * @param array $articles Raw NewsAPI data
+     * @param string|null $category Optional category override
+     * @return Collection<int,Article>
+     */
     private function formatArticles(array $articles, ?string $category = null): Collection
     {
         return collect($articles)->map(function ($article) use ($category) {
