@@ -132,13 +132,7 @@ class EloquentArticleRepository implements ArticleRepository
      * 
      * Constructs Eloquent query builder with common filtering logic.
      * 
-     * @param array $filters Filter parameters:
-     *                       - keyword: Search in title, description, author, publisher
-     *                       - from/to: Date range for published_at
-     *                       - provider: Filter by news provider(s)
-     *                       - publisher: Filter by publisher(s)
-     *                       - author: Filter by author(s)
-     *                       - category: Filter by category(ies)
+     * @param array $filters
      * @return Builder Eloquent query builder with applied filters
      */
     private function baseQuery(array $filters): Builder

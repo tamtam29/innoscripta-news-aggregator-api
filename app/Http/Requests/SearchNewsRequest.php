@@ -5,6 +5,25 @@ namespace App\Http\Requests;
 use App\Http\Requests\BaseRequest;
 
 /**
+ * @OA\Schema(
+ *     schema="SearchNewsRequest",
+ *     type="object",
+ *     title="Search News Request",
+ *     description="Request parameters for searching news articles",
+ *     required={"keyword"},
+ *     @OA\Property(property="keyword", type="string", example="artificial intelligence", description="Search keyword (required)"),
+ *     @OA\Property(property="category", type="string", example="technology", description="Filter by news category"),
+ *     @OA\Property(property="publisher", type="string", example="TechCrunch", description="Filter by publisher name"),
+ *     @OA\Property(property="provider", type="string", enum={"newsapi", "guardian", "nyt"}, example="newsapi", description="Filter by news provider"),
+ *     @OA\Property(property="author", type="string", example="John Doe", description="Filter by author name"),
+ *     @OA\Property(property="from", type="string", format="date", example="2025-09-01", description="Filter articles from this date (YYYY-MM-DD)"),
+ *     @OA\Property(property="to", type="string", format="date", example="2025-09-30", description="Filter articles to this date (YYYY-MM-DD)"),
+ *     @OA\Property(property="page", type="integer", minimum=1, maximum=100, default=1, example=1, description="Page number for pagination"),
+ *     @OA\Property(property="pageSize", type="integer", minimum=1, maximum=100, default=20, example=20, description="Number of articles per page")
+ * )
+ */
+
+/**
  * Search News Request Validation
  * 
  * Validates parameters for searching articles across news providers.

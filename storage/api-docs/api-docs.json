@@ -1,0 +1,674 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "News Aggregator API",
+        "description": "A comprehensive news aggregation API that fetches articles from multiple sources including NewsAPI, The Guardian, and The New York Times. Provides endpoints for retrieving headlines, searching articles, and managing news preferences.",
+        "contact": {
+            "name": "API Support",
+            "email": "aditiatama@gmail.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/api",
+            "description": "News Aggregator API Server"
+        }
+    ],
+    "paths": {
+        "/news/headlines": {
+            "get": {
+                "tags": [
+                    "News"
+                ],
+                "summary": "Get top headlines",
+                "description": "Retrieve the latest news headlines with pagination and optional filters",
+                "operationId": "6372d8bb7b2c793cfba8191120b9c30a",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Filter by news category",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "technology"
+                        }
+                    },
+                    {
+                        "name": "publisher",
+                        "in": "query",
+                        "description": "Filter by publisher name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "description": "Filter by news provider",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "newsapi",
+                                "guardian",
+                                "nyt"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "author",
+                        "in": "query",
+                        "description": "Filter by author name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Filter articles from this date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-09-01"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Filter articles to this date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-09-30"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "in": "query",
+                        "description": "Number of articles per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with headlines",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ArticleResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "links": {
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string",
+                                                    "example": "http://localhost/api/news/headlines?page=1"
+                                                },
+                                                "last": {
+                                                    "type": "string",
+                                                    "example": "http://localhost/api/news/headlines?page=5"
+                                                },
+                                                "prev": {
+                                                    "type": "string",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "next": {
+                                                    "type": "string",
+                                                    "example": "http://localhost/api/news/headlines?page=2"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/news/search": {
+            "get": {
+                "tags": [
+                    "News"
+                ],
+                "summary": "Search news articles",
+                "description": "Search for news articles by keyword with pagination and optional filters",
+                "operationId": "2bab2ac26a4620cfea7ba1ce53f23a1c",
+                "parameters": [
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "description": "Search keyword (required)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "artificial intelligence"
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Filter by news category",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "technology"
+                        }
+                    },
+                    {
+                        "name": "publisher",
+                        "in": "query",
+                        "description": "Filter by publisher name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "TechCrunch"
+                        }
+                    },
+                    {
+                        "name": "provider",
+                        "in": "query",
+                        "description": "Filter by news provider",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "newsapi",
+                                "guardian",
+                                "nyt"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "author",
+                        "in": "query",
+                        "description": "Filter by author name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "John Doe"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Filter articles from this date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-09-01"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "Filter articles to this date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-09-30"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "in": "query",
+                        "description": "Number of articles per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with search results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ArticleResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "links": {
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string",
+                                                    "example": "http://localhost/api/news/search?page=1"
+                                                },
+                                                "last": {
+                                                    "type": "string",
+                                                    "example": "http://localhost/api/news/search?page=5"
+                                                },
+                                                "prev": {
+                                                    "type": "string",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "next": {
+                                                    "type": "string",
+                                                    "example": "http://localhost/api/news/search?page=2"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The keyword field is required."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/news/{id}": {
+            "get": {
+                "tags": [
+                    "News"
+                ],
+                "summary": "Get a specific article",
+                "description": "Retrieve a single news article by its unique identifier",
+                "operationId": "808279e21907d41ede90b13d10882e40",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Article ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with article details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArticleResource"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Article with ID 1 does not exist"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "News"
+                ],
+                "summary": "Delete a specific article",
+                "description": "Remove a news article from the database by its unique identifier",
+                "operationId": "9aa64a7959e1011d5cd8c10eb33acb7f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Article ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Article deleted successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Article with ID 1 does not exist or could not be deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ArticleResource": {
+                "title": "Article Resource",
+                "description": "Details of a news article",
+                "properties": {
+                    "id": {
+                        "description": "Unique identifier of the article",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "description": "Article title",
+                        "type": "string",
+                        "example": "Breaking: New Technology Breakthrough"
+                    },
+                    "description": {
+                        "description": "Article description/excerpt",
+                        "type": "string",
+                        "example": "Scientists have made a significant breakthrough in quantum computing..."
+                    },
+                    "published_at": {
+                        "description": "Publication date and time",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-09-30T10:57:36.000000Z"
+                    },
+                    "author": {
+                        "description": "Article author name",
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "publisher": {
+                        "description": "Publisher name",
+                        "type": "string",
+                        "example": "TechCrunch"
+                    },
+                    "provider": {
+                        "description": "News provider source",
+                        "type": "string",
+                        "example": "newsapi"
+                    },
+                    "url": {
+                        "description": "Original article URL",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://techcrunch.com/article/123"
+                    },
+                    "image_url": {
+                        "description": "Article image URL",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://images.example.com/article-image.jpg"
+                    },
+                    "category": {
+                        "description": "Article category",
+                        "type": "string",
+                        "example": "technology"
+                    }
+                },
+                "type": "object"
+            },
+            "Article": {
+                "title": "Article",
+                "description": "News article entity",
+                "properties": {
+                    "id": {
+                        "description": "Unique identifier for the article",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "description": "Article headline/title",
+                        "type": "string",
+                        "example": "Breaking: Major Technology Advancement Announced"
+                    },
+                    "description": {
+                        "description": "Brief description or excerpt of the article",
+                        "type": "string",
+                        "example": "A groundbreaking technological innovation has been unveiled today, promising to revolutionize the industry."
+                    },
+                    "url": {
+                        "description": "Direct URL to the full article",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/article/tech-advancement"
+                    },
+                    "image_url": {
+                        "description": "URL to the article's featured image",
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/images/tech-article.jpg",
+                        "nullable": true
+                    },
+                    "author": {
+                        "description": "Article author name",
+                        "type": "string",
+                        "example": "John Smith",
+                        "nullable": true
+                    },
+                    "publisher": {
+                        "description": "Publishing organization or website",
+                        "type": "string",
+                        "example": "TechCrunch",
+                        "nullable": true
+                    },
+                    "published_at": {
+                        "description": "Article publication date and time",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-09-30T10:30:00Z"
+                    },
+                    "provider": {
+                        "description": "News provider source",
+                        "type": "string",
+                        "enum": [
+                            "newsapi",
+                            "guardian",
+                            "nyt"
+                        ],
+                        "example": "newsapi"
+                    },
+                    "category": {
+                        "description": "Article category/topic",
+                        "type": "string",
+                        "example": "technology",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Record creation timestamp",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-09-30T10:30:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Record last update timestamp",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-09-30T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "News",
+            "description": "News"
+        }
+    ]
+}
