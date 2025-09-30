@@ -23,12 +23,27 @@ class NewsApiProvider implements NewsProvider
     /**
      * NewsAPI.org API key
      * 
-     * @var string
+     * @var string|null
      */
-    protected string $apiKey;
+    protected ?string $apiKey;
 
     public function __construct() { 
-        $this->apiKey = (string) config('news.newsapi.key'); 
+        $this->apiKey = config('news.newsapi.key');
+        
+        // Log warning if API key is not set (but don't fail during build)
+        if (empty($this->apiKey)) {
+            Log::warning('[NewsApiProvider] Missing API key configuration. NewsAPI integration will be skipped.');
+        }
+    }
+    
+    /**
+     * Check if the provider is properly configured
+     * 
+     * @return bool
+     */
+    public function isConfigured(): bool
+    {
+        return !empty($this->apiKey);
     }
     
     /**
@@ -52,6 +67,8 @@ class NewsApiProvider implements NewsProvider
      */
     public function topHeadlines(array $params = []): Collection
     {
+        if (!$this->isConfigured()) return collect();
+
         $params = array_filter([
             'category' => $params['category'] ?? null,
             'sources'  => $params['publisher'] ?? null,
@@ -96,6 +113,8 @@ class NewsApiProvider implements NewsProvider
      */
     public function everything(array $params = []): Collection
     {
+        if (!$this->isConfigured()) return collect();
+
         $params = array_filter([
             'q'        => $params['keyword'] ?? null,
             'sources'  => $params['publisher'] ?? null,

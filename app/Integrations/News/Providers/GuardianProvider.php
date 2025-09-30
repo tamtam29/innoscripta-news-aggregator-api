@@ -23,12 +23,27 @@ class GuardianProvider implements NewsProvider
     /**
      * The Guardian API key
      * 
-     * @var string
+     * @var string|null
      */
-    protected string $apiKey;
+    protected ?string $apiKey;
 
     public function __construct() { 
-        $this->apiKey = (string) config('news.guardian.key'); 
+        $this->apiKey = config('news.guardian.key');
+        
+        // Log warning if API key is not set (but don't fail during build)
+        if (empty($this->apiKey)) {
+            Log::warning('[GuardianProvider] Missing API key configuration. Guardian integration will be skipped.');
+        }
+    }
+    
+    /**
+     * Check if the provider is properly configured
+     * 
+     * @return bool
+     */
+    public function isConfigured(): bool
+    {
+        return !empty($this->apiKey);
     }
     
     /**
@@ -52,6 +67,8 @@ class GuardianProvider implements NewsProvider
      */
     public function topHeadlines(array $params = []): Collection
     {
+        if (!$this->isConfigured()) return collect();
+
         $params = array_filter([
             'section'     => $params['category'] ?? null,
             'from-date'   => $params['from'] ?? null,

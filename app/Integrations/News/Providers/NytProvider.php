@@ -24,12 +24,27 @@ class NytProvider implements NewsProvider
     /**
      * New York Times API key
      * 
-     * @var string
+     * @var string|null
      */
-    protected string $apiKey;
+    protected ?string $apiKey;
 
     public function __construct() { 
-        $this->apiKey = (string) config('news.nyt.key'); 
+        $this->apiKey = config('news.nyt.key');
+        
+        // Log warning if API key is not set (but don't fail during build)
+        if (empty($this->apiKey)) {
+            Log::warning('[NytProvider] Missing API key configuration. NYT integration will be skipped.');
+        }
+    }
+
+    /**
+     * Check if the provider is properly configured
+     * 
+     * @return bool
+     */
+    public function isConfigured(): bool
+    {
+        return !empty($this->apiKey);
     }
 
     /**
@@ -50,6 +65,8 @@ class NytProvider implements NewsProvider
      */
     public function topHeadlines(array $params = []): Collection
     {
+        if (!$this->isConfigured()) return collect();
+
         $category = $params['category'] ?? 'home';
         $params = array_filter([
             'api-key' => $this->apiKey,
@@ -85,6 +102,8 @@ class NytProvider implements NewsProvider
      */
     public function everything(array $params = []): Collection
     {
+        if (!$this->isConfigured()) return collect();
+
         $params = array_filter([
             'q'          => $params['keyword'] ?? null,
             'begin_date' => isset($params['from']) ? str_replace('-', '', $params['from']) : null,
