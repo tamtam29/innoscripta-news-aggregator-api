@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Article;
 use App\Models\ArticleSource;
+use App\Models\Source;
 use App\Repositories\Contracts\ArticleRepository;
 use App\Integrations\News\DTOs\Article as ArticleDTO;
 use Carbon\Carbon;
@@ -71,6 +72,14 @@ class EloquentArticleRepository implements ArticleRepository
 
         foreach ($articleDTOs as $dto) {
             /** @var ArticleDTO $dto */
+            $sourceId = null;
+            if (!empty($dto->source)) {
+                $source = Source::where('name', $dto->source)->first();
+                if ($source) {
+                    $sourceId = $source->id;
+                }
+            }
+
             $articleRows[] = [
                 'url_sha1'     => sha1($dto->url),
                 'title'        => $dto->title,
@@ -78,7 +87,7 @@ class EloquentArticleRepository implements ArticleRepository
                 'url'          => $dto->url,
                 'image_url'    => $dto->imageUrl,
                 'author'       => $dto->author,
-                'publisher'    => $dto->publisher,
+                'source_id'    => $sourceId,
                 'published_at' => $dto->publishedAt,
                 'provider'     => $dto->provider,
                 'category'     => $dto->category,
@@ -98,7 +107,7 @@ class EloquentArticleRepository implements ArticleRepository
             Article::upsert(
                 $articleRows,
                 ['url_sha1'],
-                ['title','description','url','image_url','author','publisher','published_at','provider','category']
+                ['title','description','url','image_url','author','source_id','published_at','provider','category']
             );
 
             $articles = Article::whereIn('url_sha1', array_column($articleRows, 'url_sha1'))
@@ -137,15 +146,19 @@ class EloquentArticleRepository implements ArticleRepository
      */
     private function baseQuery(array $filters): Builder
     {
-        $query = Article::query();
+        $query = Article::with(['source']);
 
         if (!empty($filters['keyword'])) {
             $term = trim($filters['keyword']);
             $query->where(function (Builder $w) use ($term) {
                 $w->where('title', 'ilike', "%{$term}%")
-                  ->orWhere('description', 'ilike', "%{$term}%")
-                  ->orWhere('author', 'ilike', "%{$term}%")
-                  ->orWhere('publisher', 'ilike', "%{$term}%");
+                    ->orWhere('description', 'ilike', "%{$term}%")
+                    ->orWhere('author', 'ilike', "%{$term}%")
+                    ->orWhere(function ($subQuery) use ($term) {
+                        $subQuery->whereHas('source', function ($query) use ($term) {
+                            $query->where('name', 'ilike', "%{$term}%");
+                        });
+                    });
             });
         }
 
@@ -162,15 +175,21 @@ class EloquentArticleRepository implements ArticleRepository
             $query->whereIn('provider', $providers);
         }
 
-        if (!empty($filters['publisher'])) {
-            $publishers = is_array($filters['publisher']) ? $filters['publisher'] : [$filters['publisher']];
-            $query->whereIn('publisher', $publishers);
+        if (!empty($filters['source'])) {
+            $sources = is_array($filters['source']) ? $filters['source'] : [$filters['source']];
+            $query->whereHas('source', function ($q) use ($sources) {
+                $q->where(function ($subQuery) use ($sources) {
+                    foreach ($sources as $source) {
+                        $subQuery->orWhere('name', 'ilike', "%{$source}%");
+                    }
+                });
+            });
         }
 
         if (!empty($filters['author'])) {
             $authors = is_array($filters['author']) ? $filters['author'] : [$filters['author']];
             $query->where(function($w) use ($authors) {
-                foreach ($authors as $a) $w->orWhere('author', 'ilike', '%'.$a.'%');
+                foreach ($authors as $author) $w->orWhere('author', 'ilike', '%'.$author.'%');
             });
         }
 

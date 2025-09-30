@@ -217,14 +217,14 @@ class NewsService
     {
         // Create a stable cache key from relevant parameters
         $keyData = [
-            'mode' => $mode,
-            'keyword' => $params['keyword'] ?? null,
-            'category' => $params['category'] ?? null,
-            'publisher' => $params['publisher'] ?? null,
-            'provider' => $params['provider'] ?? null,
-            'author' => $params['author'] ?? null,
-            'from' => $params['from'] ?? null,
-            'to' => $params['to'] ?? null,
+            'mode'      => $mode,
+            'keyword'   => $params['keyword'] ?? null,
+            'category'  => $params['category'] ?? null,
+            'source'    => $params['source'] ?? null,
+            'provider'  => $params['provider'] ?? null,
+            'author'    => $params['author'] ?? null,
+            'from'      => $params['from'] ?? null,
+            'to'        => $params['to'] ?? null,
         ];
 
         return 'news_fetch:' . md5(serialize($keyData));

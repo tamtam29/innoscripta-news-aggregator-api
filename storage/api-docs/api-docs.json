@@ -36,9 +36,9 @@
                         }
                     },
                     {
-                        "name": "publisher",
+                        "name": "source",
                         "in": "query",
-                        "description": "Filter by publisher name",
+                        "description": "Filter by source name",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -235,9 +235,9 @@
                         }
                     },
                     {
-                        "name": "publisher",
+                        "name": "source",
                         "in": "query",
-                        "description": "Filter by publisher name",
+                        "description": "Filter by source name",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -518,6 +518,62 @@
                     }
                 }
             }
+        },
+        "/sources": {
+            "get": {
+                "tags": [
+                    "Sources"
+                ],
+                "summary": "List sources",
+                "description": "Retrieve a list of sources",
+                "operationId": "6830d86f9e3aa453fb3e66a3de520043",
+                "responses": {
+                    "200": {
+                        "description": "Successful response with sources",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "source_id": {
+                                                "description": "Unique identifier of the source",
+                                                "type": "string",
+                                                "example": "abc-news"
+                                            },
+                                            "source_name": {
+                                                "description": "Name of the source",
+                                                "type": "string",
+                                                "example": "ABC News"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -552,8 +608,8 @@
                         "type": "string",
                         "example": "John Doe"
                     },
-                    "publisher": {
-                        "description": "Publisher name",
+                    "source": {
+                        "description": "Source name",
                         "type": "string",
                         "example": "TechCrunch"
                     },
@@ -620,7 +676,7 @@
                         "example": "John Smith",
                         "nullable": true
                     },
-                    "publisher": {
+                    "source": {
                         "description": "Publishing organization or website",
                         "type": "string",
                         "example": "TechCrunch",
@@ -669,6 +725,10 @@
         {
             "name": "News",
             "description": "News"
+        },
+        {
+            "name": "Sources",
+            "description": "Sources"
         }
     ]
 }

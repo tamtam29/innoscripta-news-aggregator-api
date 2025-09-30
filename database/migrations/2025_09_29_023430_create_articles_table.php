@@ -19,17 +19,17 @@ return new class extends Migration
             $table->string('url_sha1', 40)->unique();
             $table->text('image_url')->nullable();
             $table->string('author')->nullable();
-            $table->string('publisher')->nullable();
+            $table->unsignedBigInteger('source_id')->nullable();
             $table->string('provider')->nullable();
             $table->timestamp('published_at')->index();
             $table->string('category')->nullable();
             $table->timestamps();
 
-            $table->index(['publisher']);
+            $table->foreign('source_id')->references('id')->on('sources')->nullOnDelete();
+
             $table->index(['author']);
             $table->index(['category']);
             $table->index(['published_at', 'id']);
-            $table->index(['provider']);
         });
     }
 

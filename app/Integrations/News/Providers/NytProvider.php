@@ -162,7 +162,7 @@ class NytProvider implements NewsProvider
             url: $this->extractUrl($article),
             imageUrl: $this->extractImageUrl($article),
             author: $this->extractAuthor($article),
-            publisher: 'The New York Times',
+            source: 'The New York Times',
             publishedAt: Carbon::parse($this->extractPublishDate($article)),
             provider: self::key(),
             category: Taxonomy::canonicalizeCategory($this->extractCategory($article)),

@@ -38,9 +38,9 @@ class NewsController extends Controller
      *         @OA\Schema(type="string", example="technology")
      *     ),
      *     @OA\Parameter(
-     *         name="publisher",
+     *         name="source",
      *         in="query",
-     *         description="Filter by publisher name",
+     *         description="Filter by source name",
      *         required=false,
      *         @OA\Schema(type="string")
      *     ),
@@ -156,9 +156,9 @@ class NewsController extends Controller
      *         @OA\Schema(type="string", example="technology")
      *     ),
      *     @OA\Parameter(
-     *         name="publisher",
+     *         name="source",
      *         in="query",
-     *         description="Filter by publisher name",
+     *         description="Filter by source name",
      *         required=false,
      *         @OA\Schema(type="string", example="TechCrunch")
      *     ),

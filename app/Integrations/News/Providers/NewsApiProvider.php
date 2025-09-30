@@ -6,6 +6,7 @@ use App\Integrations\News\Contracts\NewsProvider;
 use App\Integrations\News\DTOs\Article;
 use App\Integrations\News\Supports\Taxonomy;
 use App\Integrations\News\Supports\RateLimitTrait;
+use App\Services\SourceService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -30,8 +31,9 @@ class NewsApiProvider implements NewsProvider
      */
     protected ?string $apiKey;
 
-    public function __construct() 
-    { 
+    public function __construct(
+        private SourceService $sourceService
+    ) { 
         // Load API key from config, log warning if missing
         $this->apiKey = config('news.newsapi.key');
         
@@ -79,17 +81,39 @@ class NewsApiProvider implements NewsProvider
     }
 
     /**
+     * Resolve source ID from source name
+     */
+    private function resolveSourceId(?string $sourceName): ?string
+    {
+        if (!$sourceName) {
+            return null;
+        }
+
+        $sourceId = $this->sourceService->getSourceIdByName($sourceName);
+
+        if (!$sourceId) {
+            Log::warning('[NewsApiProvider] Source not found in NewsAPI sources', [
+                'source' => $sourceName
+            ]);
+        }
+
+        return $sourceId;
+    }
+
+    /**
      * Build query parameters for top-headlines endpoint
      */
     private function buildTopHeadlinesParams(array $params): array
     {
+        $sourceId = $this->resolveSourceId($params['source'] ?? null);
+
         return array_filter([
             'category' => $params['category'] ?? null,
-            'sources'  => $params['publisher'] ?? null,
+            'sources'  => $sourceId,
             'page'     => $params['page'] ?? 1,
             'pageSize' => $params['pageSize'] ?? 20,
             'sortBy'   => 'popularity',
-            'country'  => 'us',
+            'country'  => $sourceId ? null : 'us', // Don't use country filter with sources
             'apiKey'   => $this->apiKey,
         ]);
     }
@@ -99,9 +123,11 @@ class NewsApiProvider implements NewsProvider
      */
     private function buildEverythingParams(array $params): array
     {
+        $sourceId = $this->resolveSourceId($params['source'] ?? null);
+
         return array_filter([
             'q'        => $params['keyword'] ?? null,
-            'sources'  => $params['publisher'] ?? null,
+            'sources'  => $sourceId,
             'from'     => $params['from'] ?? null,
             'to'       => $params['to'] ?? null,
             'page'     => $params['page'] ?? 1,
@@ -169,12 +195,42 @@ class NewsApiProvider implements NewsProvider
             url: $article['url'] ?? null,
             imageUrl: $article['urlToImage'] ?? null,
             author: $article['author'] ?? null,
-            publisher: data_get($article, 'source.name') ?? 'NewsAPI',
+            source: data_get($article, 'source.name') ?? 'NewsAPI',
             publishedAt: $article['publishedAt'] ? Carbon::parse($article['publishedAt']) : null,
             provider: self::key(),
             category: Taxonomy::canonicalizeCategory($category),
             externalId: $article['url'] ?? null,
             metadata: $article
         );
+    }
+
+    /**
+     * Fetch all available sources from NewsAPI
+     * Used for seeding/updating source database
+     */
+    public function fetchSources(): Collection
+    {
+        if (!$this->isConfigured()) {
+            Log::warning('[NewsApiProvider] Cannot fetch sources - API key not configured');
+            return collect();
+        }
+
+        try {
+            $response = Http::baseUrl(config('news.newsapi.base'))
+                ->get('top-headlines/sources', [
+                    'apiKey' => $this->apiKey,
+                ])
+                ->throw();
+
+            $sources = data_get($response->json(), 'sources', []);
+            Log::info('[NewsApiProvider] Fetched ' . count($sources) . ' sources from API');
+            
+            return collect($sources);
+        } catch (\Exception $e) {
+            Log::error('[NewsApiProvider] Failed to fetch sources', [
+                'error' => $e->getMessage(),
+            ]);
+            return collect();
+        }
     }
 }

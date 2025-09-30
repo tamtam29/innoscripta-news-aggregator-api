@@ -22,7 +22,7 @@ class Article
      * @param string $url Direct link to the full article
      * @param string|null $imageUrl URL to the article's featured image
      * @param string|null $author Author name or byline
-     * @param string|null $publisher Publication name (e.g., "The Guardian", "BBC News")
+     * @param string|null $source Publication name (e.g., "The Guardian", "BBC News")
      * @param Carbon $publishedAt When the article was published
      * @param string $provider Source provider key (e.g., 'newsapi', 'guardian', 'nyt')
      * @param string|null $category Normalized category (e.g., 'technology', 'business')
@@ -35,7 +35,7 @@ class Article
         public string $url,
         public ?string $imageUrl,
         public ?string $author,
-        public ?string $publisher,
+        public ?string $source,
         public Carbon $publishedAt,
         public string $provider,
         public ?string $category,

@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  *     @OA\Property(property="url", type="string", format="url", example="https://example.com/article/tech-advancement", description="Direct URL to the full article"),
  *     @OA\Property(property="image_url", type="string", format="url", nullable=true, example="https://example.com/images/tech-article.jpg", description="URL to the article's featured image"),
  *     @OA\Property(property="author", type="string", nullable=true, example="John Smith", description="Article author name"),
- *     @OA\Property(property="publisher", type="string", nullable=true, example="TechCrunch", description="Publishing organization or website"),
+ *     @OA\Property(property="source", type="string", nullable=true, example="TechCrunch", description="Publishing organization or website"),
  *     @OA\Property(property="published_at", type="string", format="date-time", example="2025-09-30T10:30:00Z", description="Article publication date and time"),
  *     @OA\Property(property="provider", type="string", enum={"newsapi", "guardian", "nyt"}, example="newsapi", description="News provider source"),
  *     @OA\Property(property="category", type="string", nullable=true, example="technology", description="Article category/topic"),
@@ -36,7 +36,7 @@ class Article extends Model
         'url_sha1',
         'image_url',
         'author',
-        'publisher',
+        'source',
         'published_at',
         'provider',
         'category',
@@ -46,5 +46,13 @@ class Article extends Model
         'published_at' => 'datetime',
     ];
 
-    public function sources() { return $this->hasMany(ArticleSource::class); }
+    public function article_sources() 
+    { 
+        return $this->hasMany(ArticleSource::class); 
+    }
+
+    public function source()
+    {
+        return $this->belongsTo(Source::class);
+    }
 }

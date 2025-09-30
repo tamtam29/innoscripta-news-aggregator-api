@@ -11,7 +11,7 @@ use App\Http\Requests\BaseRequest;
  *     title="Headlines Request",
  *     description="Request parameters for fetching top headlines",
  *     @OA\Property(property="category", type="string", example="technology", description="Filter by news category"),
- *     @OA\Property(property="publisher", type="string", example="TechCrunch", description="Filter by publisher name"),
+ *     @OA\Property(property="source", type="string", example="TechCrunch", description="Filter by source name"),
  *     @OA\Property(property="provider", type="string", enum={"newsapi", "guardian", "nyt"}, example="newsapi", description="Filter by news provider"),
  *     @OA\Property(property="author", type="string", example="John Doe", description="Filter by author name"),
  *     @OA\Property(property="from", type="string", format="date", example="2025-09-01", description="Filter articles from this date (YYYY-MM-DD)"),
@@ -39,7 +39,7 @@ class HeadlinesRequest extends BaseRequest
         return [
             // Filters
             'category'  => 'sometimes|string|max:50',
-            'publisher' => 'sometimes|string|max:200',
+            'source'    => 'sometimes|string|max:200',
             'provider'  => 'sometimes|string|in:newsapi,guardian,nyt',
             'author'    => 'sometimes|string|max:100',
             

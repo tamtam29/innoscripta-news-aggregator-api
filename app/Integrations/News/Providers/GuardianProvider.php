@@ -152,7 +152,7 @@ class GuardianProvider implements NewsProvider
             url: $article['webUrl'] ?? null,
             imageUrl: data_get($article, 'fields.thumbnail'),
             author: data_get($article, 'fields.byline'),
-            publisher: 'The Guardian',
+            source: 'The Guardian',
             publishedAt: Carbon::parse($article['webPublicationDate'] ?? now()),
             provider: self::key(),
             category: Taxonomy::canonicalizeCategory($article['sectionId'] ?? null),
