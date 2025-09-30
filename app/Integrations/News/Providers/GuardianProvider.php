@@ -5,6 +5,7 @@ namespace App\Integrations\News\Providers;
 use App\Integrations\News\Contracts\NewsProvider;
 use App\Integrations\News\DTOs\Article;
 use App\Integrations\News\Supports\Taxonomy;
+use App\Integrations\News\Supports\RateLimitTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -20,6 +21,8 @@ use Illuminate\Support\Facades\Log;
  */
 class GuardianProvider implements NewsProvider
 {
+    use RateLimitTrait;
+
     /**
      * The Guardian API key
      * 
@@ -27,10 +30,11 @@ class GuardianProvider implements NewsProvider
      */
     protected ?string $apiKey;
 
-    public function __construct() { 
+    public function __construct() 
+    { 
+        // Load API key from config, log warning if missing
         $this->apiKey = config('news.guardian.key');
         
-        // Log warning if API key is not set (but don't fail during build)
         if (empty($this->apiKey)) {
             Log::warning('[GuardianProvider] Missing API key configuration. Guardian integration will be skipped.');
         }
@@ -47,98 +51,113 @@ class GuardianProvider implements NewsProvider
     }
     
     /**
-     * Get unique identifier for this provider
+     * Get provider key
      * 
-     * @return string Provider key 'guardian'
+     * @return string
      */
-    public static function key(): string { 
+    public static function key(): string 
+    { 
         return 'guardian'; 
     }
 
     /**
-     * Fetch top headlines from The Guardian
-     * 
-     * @param array $params Query parameters:
-     *                      - category: Guardian section ID
-     *                      - from/to: Date range (YYYY-MM-DD)
-     *                      - page: Page number
-     *                      - pageSize: Results per page
-     * @return Collection<int,Article>
+     * Fetch top headlines ordered by relevance
      */
     public function topHeadlines(array $params = []): Collection
     {
-        if (!$this->isConfigured()) return collect();
+        $queryParams = $this->buildQueryParams($params, 'newest');
+        return $this->fetchArticles('search', $queryParams);
+    }
 
-        $params = array_filter([
+    /**
+     * Search all content ordered by newest
+     */
+    public function searchArticles(array $params = []): Collection
+    {
+        $queryParams = $this->buildQueryParams($params, 'relevance');
+        return $this->fetchArticles('search', $queryParams);
+    }
+
+    /**
+     * Build Guardian API query parameters
+     */
+    private function buildQueryParams(array $params, string $orderBy): array
+    {
+        return array_filter([
             'section'     => $params['category'] ?? null,
             'from-date'   => $params['from'] ?? null,
             'to-date'     => $params['to'] ?? null,
             'page'        => $params['page'] ?? 1,
             'page-size'   => $params['pageSize'] ?? 20,
             'show-fields' => 'thumbnail,trailText,byline',
-            'order-by'    => 'relevance',
+            'order-by'    => $orderBy,
             'api-key'     => $this->apiKey,
         ]);
+    }
+
+    /**
+     * Execute API request with rate limiting and error handling
+     */
+    private function fetchArticles(string $endpoint, array $params): Collection
+    {
+        // Check configuration
+        if (!$this->isConfigured()) {
+            return collect();
+        }
+
+        // Check rate limits
+        if ($this->isRateLimited()) {
+            Log::warning('[GuardianProvider] Request blocked due to rate limiting');
+            return collect();
+        }
+
+        // Apply throttling and increment counters
+        $this->throttleRequest();
+        $this->incrementRateLimit();
 
         try {
-            $res = Http::baseUrl(config('news.guardian.base'))
-                ->get('search', $params)
+            $response = Http::baseUrl(config('news.guardian.base'))
+                ->get($endpoint, $params)
                 ->throw();
 
-            $results = data_get($res->json(), 'response.results', []);
-            Log::info('[GuardianProvider] topHeadlines fetched ' . count($results) . ' articles');
+            $results = data_get($response->json(), 'response.results', []);
+            Log::info('[GuardianProvider] ' . $endpoint . ' fetched ' . count($results) . ' articles');
                 
             return $this->formatArticles($results);
         } catch (\Exception $e) {
-            Log::error('[GuardianProvider] topHeadlines request failed', [
+            Log::error('[GuardianProvider] ' . $endpoint . ' request failed', [
                 'params' => $params,
                 'error' => $e->getMessage(),
             ]);
-
             return collect();
         }
     }
 
     /**
-     * Search all Guardian content (ordered by newest)
-     * 
-     * @param array $params Same parameters as topHeadlines
-     * @return Collection<int,Article>
+     * Transform API response into Article DTOs
      */
-    public function everything(array $params = []): Collection
+    private function formatArticles(array $articles): Collection
     {
-        return $this->topHeadlines(array_merge($params, ['order-by' => 'newest']));
+        return collect($articles)->map(fn($article) => $this->createArticle($article));
     }
 
     /**
-     * Transform Guardian API response into Article DTOs
-     * 
-     * Maps Guardian fields to standardized Article structure:
-     * webTitle → title, fields.trailText → description, etc.
-     * 
-     * @param array $articles Raw Guardian API data
-     * @param string|null $category Optional category override
-     * @return Collection<int,Article>
+     * Create Article DTO from Guardian data
      */
-    private function formatArticles(array $articles, ?string $category = null): Collection
+    private function createArticle(array $article): Article
     {
-        return collect($articles)->map(function ($article) use ($category) {
-            $category = Taxonomy::canonicalizeCategory($article['sectionId'] ?? null);
-
-            return new Article(
-                title: $article['webTitle'] ?? '(no title)',
-                description: data_get($article, 'fields.trailText'),
-                url: $article['webUrl'],
-                imageUrl: data_get($article, 'fields.thumbnail'),
-                author: data_get($article, 'fields.byline'),
-                publisher: 'The Guardian',
-                publishedAt: Carbon::parse($article['webPublicationDate'] ?? now()),
-                provider: self::key(),
-                category: $category,
-                externalId: $article['id'] ?? $article['webUrl'] ?? null,
-                metadata: $article
-            );
-        });
+        return new Article(
+            title: $article['webTitle'] ?? '(no title)',
+            description: data_get($article, 'fields.trailText'),
+            url: $article['webUrl'] ?? null,
+            imageUrl: data_get($article, 'fields.thumbnail'),
+            author: data_get($article, 'fields.byline'),
+            publisher: 'The Guardian',
+            publishedAt: Carbon::parse($article['webPublicationDate'] ?? now()),
+            provider: self::key(),
+            category: Taxonomy::canonicalizeCategory($article['sectionId'] ?? null),
+            externalId: $article['id'] ?? $article['webUrl'] ?? null,
+            metadata: $article
+        );
     }
-
 }

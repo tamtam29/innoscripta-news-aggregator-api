@@ -5,6 +5,7 @@ namespace App\Integrations\News\Providers;
 use App\Integrations\News\Contracts\NewsProvider;
 use App\Integrations\News\DTOs\Article;
 use App\Integrations\News\Supports\Taxonomy;
+use App\Integrations\News\Supports\RateLimitTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Log;
  */
 class NytProvider implements NewsProvider
 {
+    use RateLimitTrait;
+
     /**
      * New York Times API key
      * 
@@ -28,10 +31,11 @@ class NytProvider implements NewsProvider
      */
     protected ?string $apiKey;
 
-    public function __construct() { 
+    public function __construct() 
+    { 
+        // Load API key from config, log warning if missing
         $this->apiKey = config('news.nyt.key');
         
-        // Log warning if API key is not set (but don't fail during build)
         if (empty($this->apiKey)) {
             Log::warning('[NytProvider] Missing API key configuration. NYT integration will be skipped.');
         }
@@ -52,59 +56,46 @@ class NytProvider implements NewsProvider
      * 
      * @return string
      */
-    public static function key(): string { 
+    public static function key(): string 
+    { 
         return 'nyt'; 
     }
 
     /**
      * Fetch top stories from NYT
-     * 
-     * @param array $params Query parameters:
-     *                      - category: NYT section (home, world, business, etc.)
-     * @return Collection<int,Article>
      */
     public function topHeadlines(array $params = []): Collection
     {
-        if (!$this->isConfigured()) return collect();
-
         $category = $params['category'] ?? 'home';
-        $params = array_filter([
-            'api-key' => $this->apiKey,
-        ]);
-
-        try {
-            $res = Http::baseUrl(config('news.nyt.base'))
-                ->get("topstories/v2/{$category}.json", $params)
-                ->throw();
-
-            $results = $res->json()['results'] ?? [];
-            Log::info('[NytProvider] topHeadlines fetched ' . count($results) . ' articles');
-
-            return $this->formatArticles($results);
-        } catch (\Exception $e) {
-            Log::error('[NytProvider] topHeadlines request failed', [
-                'params' => $params,
-                'error' => $e->getMessage(),
-            ]);
-
-            return collect();
-        }
+        $queryParams = $this->buildTopStoriesParams();
+        return $this->fetchArticles("topstories/v2/{$category}.json", $queryParams, 'results');
     }
 
     /**
      * Search NYT article archive
-     * 
-     * @param array $params Query parameters:
-     *                      - keyword: Search term
-     *                      - from/to: Date range (YYYY-MM-DD)
-     *                      - page: Page number
-     * @return Collection<int,Article>
      */
-    public function everything(array $params = []): Collection
+    public function searchArticles(array $params = []): Collection
     {
-        if (!$this->isConfigured()) return collect();
+        $queryParams = $this->buildArticleSearchParams($params);
+        return $this->fetchArticles('search/v2/articlesearch.json', $queryParams, 'response.docs');
+    }
 
-        $params = array_filter([
+    /**
+     * Build query parameters for top stories endpoint
+     */
+    private function buildTopStoriesParams(): array
+    {
+        return [
+            'api-key' => $this->apiKey,
+        ];
+    }
+
+    /**
+     * Build query parameters for article search endpoint
+     */
+    private function buildArticleSearchParams(array $params): array
+    {
+        return array_filter([
             'q'          => $params['keyword'] ?? null,
             'begin_date' => isset($params['from']) ? str_replace('-', '', $params['from']) : null,
             'end_date'   => isset($params['to']) ? str_replace('-', '', $params['to']) : null,
@@ -112,61 +103,145 @@ class NytProvider implements NewsProvider
             'sort'       => 'newest',
             'api-key'    => $this->apiKey,
         ]);
+    }
+
+    /**
+     * Execute API request with rate limiting and error handling
+     */
+    private function fetchArticles(string $endpoint, array $params, string $dataPath): Collection
+    {
+        // Check configuration and rate limits
+        if (!$this->isConfigured()) {
+            return collect();
+        }
+
+        // Check rate limits
+        if ($this->isRateLimited()) {
+            Log::warning('[NytProvider] Request blocked due to rate limiting');
+            return collect();
+        }
+
+        // Apply throttling and increment counters
+        $this->throttleRequest();
+        $this->incrementRateLimit();
 
         try {
-            $res = Http::baseUrl(config('news.nyt.base'))
-                ->get('search/v2/articlesearch.json', $params)
+            $response = Http::baseUrl(config('news.nyt.base'))
+                ->get($endpoint, $params)
                 ->throw();
 
-            $docs = data_get($res->json(), 'response.docs', []);
-            Log::info('[NytProvider] everything fetched ' . count($docs) . ' articles');
-
-            return $this->formatArticles($docs);
+            $articles = data_get($response->json(), $dataPath, []);
+            Log::info('[NytProvider] ' . $endpoint . ' fetched ' . count($articles) . ' articles');
+                
+            return $this->formatArticles($articles);
         } catch (\Exception $e) {
-            Log::error('[NytProvider] everything request failed', [
+            Log::error('[NytProvider] ' . $endpoint . ' request failed', [
                 'params' => $params,
                 'error' => $e->getMessage(),
             ]);
-
             return collect();
         }
     }
 
     /**
-     * Transform NYT API response into Article DTOs
-     * 
-     * Handles both Top Stories and Article Search response formats.
-     * Maps NYT fields to standardized Article structure.
-     * 
-     * @param array $articles Raw NYT API data
-     * @return Collection<int,Article>
+     * Transform API response into Article DTOs
      */
     private function formatArticles(array $articles): Collection
     {
-        return collect($articles)->map(function ($article) {
-            $category = Taxonomy::canonicalizeCategory($article['section_name'] ?? $article['section'] ?? null);
-            $multimedia = $article['multimedia'] ?? [];
-            $imageUrl = null;
+        return collect($articles)->map(fn($article) => $this->createArticle($article));
+    }
 
-            if (is_array($multimedia) && isset($multimedia['default']['url'])) {
-                $imageUrl = $multimedia['default']['url'];
-            } elseif (is_array($multimedia)) {
-                $imageUrl = collect($multimedia)->firstWhere('format', 'Super Jumbo')['url'] ?? null;
-            }
+    /**
+     * Create Article DTO from NYT data
+     */
+    private function createArticle(array $article): Article
+    {
+        return new Article(
+            title: $this->extractTitle($article),
+            description: $this->extractDescription($article),
+            url: $this->extractUrl($article),
+            imageUrl: $this->extractImageUrl($article),
+            author: $this->extractAuthor($article),
+            publisher: 'The New York Times',
+            publishedAt: Carbon::parse($this->extractPublishDate($article)),
+            provider: self::key(),
+            category: Taxonomy::canonicalizeCategory($this->extractCategory($article)),
+            externalId: $this->extractId($article),
+            metadata: $article
+        );
+    }
 
-            return new Article(
-                title: $article['title'] ?? $article['headline']['main'] ?? '(no title)',
-                description: $article['abstract'] ?? $article['snippet'] ?? null,
-                url: $article['url'] ?? $article['web_url'] ?? null,
-                imageUrl: $imageUrl,
-                author: $article['byline']['original'] ?? $article['byline'] ?? null,
-                publisher: 'The New York Times',
-                publishedAt: Carbon::parse($article['pub_date'] ?? $article['published_date'] ?? now()),
-                provider: self::key(),
-                category: $category,
-                externalId: $article['_id'] ?? $article['uri'] ?? $article['url'] ?? null,
-                metadata: $article
-            );
-        });
+    /**
+     * Extract title from different NYT response formats
+     */
+    private function extractTitle(array $article): string
+    {
+        return $article['title'] ?? $article['headline']['main'] ?? '(no title)';
+    }
+
+    /**
+     * Extract description from different NYT response formats
+     */
+    private function extractDescription(array $article): ?string
+    {
+        return $article['abstract'] ?? $article['snippet'] ?? null;
+    }
+
+    /**
+     * Extract URL from different NYT response formats
+     */
+    private function extractUrl(array $article): ?string
+    {
+        return $article['url'] ?? $article['web_url'] ?? null;
+    }
+
+    /**
+     * Extract image URL from NYT multimedia data
+     */
+    private function extractImageUrl(array $article): ?string
+    {
+        $multimedia = $article['multimedia'] ?? [];
+        
+        if (is_array($multimedia) && isset($multimedia['default']['url'])) {
+            return $multimedia['default']['url'];
+        }
+        
+        if (is_array($multimedia)) {
+            return collect($multimedia)->firstWhere('format', 'Super Jumbo')['url'] ?? null;
+        }
+        
+        return null;
+    }
+
+    /**
+     * Extract author from different NYT response formats
+     */
+    private function extractAuthor(array $article): ?string
+    {
+        return $article['byline']['original'] ?? $article['byline'] ?? null;
+    }
+
+    /**
+     * Extract publish date from different NYT response formats
+     */
+    private function extractPublishDate(array $article): string
+    {
+        return $article['pub_date'] ?? $article['published_date'] ?? now();
+    }
+
+    /**
+     * Extract category from different NYT response formats
+     */
+    private function extractCategory(array $article): ?string
+    {
+        return $article['section_name'] ?? $article['section'] ?? null;
+    }
+
+    /**
+     * Extract external ID from different NYT response formats
+     */
+    private function extractId(array $article): ?string
+    {
+        return $article['_id'] ?? $article['uri'] ?? $article['url'] ?? null;
     }
 }

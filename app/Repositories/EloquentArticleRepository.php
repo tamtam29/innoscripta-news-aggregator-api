@@ -194,18 +194,4 @@ class EloquentArticleRepository implements ArticleRepository
     {
         return $this->baseQuery($filters)->paginate($pageSize, ['*'], 'page', $page);
     }
-
-    /**
-     * Get the newest publication date from filtered results
-     * 
-     * @param array $filters Filter parameters (see baseQuery)
-     * @return Carbon|null Latest published_at date or null if no results
-     */
-    public function newestPublishedAt(array $filters): ?Carbon
-    {
-        $row = $this->baseQuery($filters)->select('published_at')->first();
-        return $row?->published_at instanceof Carbon
-            ? $row->published_at
-            : ($row?->published_at ? Carbon::parse($row->published_at) : null);
-    }
 }

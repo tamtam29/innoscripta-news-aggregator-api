@@ -129,12 +129,6 @@ class NewsService
         // Always try database first
         $paginator = $this->articleRepository->search($params, $page, $pageSize);
 
-        // If we have results on first page, return them (avoid unnecessary API calls)
-        if ($page === 1 && $paginator->total() > 0) {
-            Log::info("[NewsService] Serving from database: {$paginator->total()} articles");
-            return $paginator;
-        }
-
         // Create cache key for this specific query
         $cacheKey = $this->getCacheKey($params, $mode);
         $lastFetchTime = Cache::get($cacheKey);
@@ -144,17 +138,24 @@ class NewsService
         $shouldFetch = !$lastFetchTime || 
                       Carbon::parse($lastFetchTime)->lt(Carbon::now()->subMinutes($freshMinutes));
 
+        // Only fetch from providers if data is stale or we have no results
         if ($shouldFetch && ($paginator->total() === 0 || $page === 1)) {
             Log::info("[NewsService] Fetching fresh content from providers", [
                 'mode' => $mode,
                 'cache_key' => $cacheKey,
-                'last_fetch' => $lastFetchTime
+                'last_fetch' => $lastFetchTime,
+                'stale_data' => $paginator->total() > 0 ? 'yes' : 'no'
             ]);
 
-            $this->fetchFromProviders($params, $page, $pageSize, $mode, $cacheKey, $freshMinutes);
-            
+            $params = array_merge($params, ['page' => $page, 'pageSize' => $pageSize]);
+            $this->fetchFromProviders($params, $mode, $cacheKey, $freshMinutes);
+
             // Get updated results after fetching
             $paginator = $this->articleRepository->search($params, $page, $pageSize);
+        } else {
+            Log::info("[NewsService] Serving from database: {$paginator->total()} articles", [
+                'fresh_until' => $lastFetchTime ? Carbon::parse($lastFetchTime)->addMinutes($freshMinutes)->toISOString() : 'never_fetched'
+            ]);
         }
 
         return $paginator;
@@ -164,14 +165,12 @@ class NewsService
      * Fetch articles from external providers
      * 
      * @param array $params
-     * @param int $page
-     * @param int $pageSize
      * @param string $mode
      * @param string $cacheKey
      * @param int $freshMinutes
      * @return void
      */
-    private function fetchFromProviders(array $params, int $page, int $pageSize, string $mode, string $cacheKey, int $freshMinutes): void
+    private function fetchFromProviders(array $params, string $mode, string $cacheKey, int $freshMinutes): void
     {
         $dtos = collect();
         $errors = [];
@@ -179,7 +178,7 @@ class NewsService
         foreach ($this->providerAggregator->enabled() as $provider) {
             try {
                 $chunk = $mode === self::MODE_SEARCH
-                    ? $provider->everything($params)
+                    ? $provider->searchArticles($params)
                     : $provider->topHeadlines($params);
                 
                 $dtos = $dtos->merge($chunk);

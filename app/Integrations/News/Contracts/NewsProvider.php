@@ -16,6 +16,13 @@ use Illuminate\Support\Collection;
 interface NewsProvider
 {
     /**
+     * Check if the provider is properly configured
+     * 
+     * @return bool True if provider has required configuration (API keys, etc.)
+     */
+    public function isConfigured(): bool;
+
+    /**
      * Fetch top headlines from the news provider
      * 
      * @param array $params Query parameters for filtering results
@@ -31,7 +38,7 @@ interface NewsProvider
      * 
      * @return Collection<int,Article> Collection of Article DTOs
      */
-    public function everything(array $params = []): Collection;
+    public function searchArticles(array $params = []): Collection;
 
     /**
      * Get the unique identifier key for this provider

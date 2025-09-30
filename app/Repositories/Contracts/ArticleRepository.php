@@ -33,14 +33,6 @@ interface ArticleRepository
     public function search(array $filters, int $page, int $pageSize): LengthAwarePaginator;
 
     /**
-     * Get the newest published date for filtered articles
-     * 
-     * @param array $filters Filter parameters
-     * @return Carbon|null
-     */
-    public function newestPublishedAt(array $filters): ?Carbon;
-
-    /**
      * Find article by ID
      * 
      * @param int $id Article ID
