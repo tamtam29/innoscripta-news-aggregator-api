@@ -74,8 +74,8 @@ class GuardianProvider implements NewsProvider
             return $this->formatArticles($results);
         } catch (\Exception $e) {
             Log::error('[GuardianProvider] topHeadlines request failed', [
-                'message' => $e->getMessage(),
-                'params' => $params
+                'params' => $params,
+                'error' => $e->getMessage(),
             ]);
 
             return collect();

@@ -66,8 +66,8 @@ class NytProvider implements NewsProvider
             return $this->formatArticles($results);
         } catch (\Exception $e) {
             Log::error('[NytProvider] topHeadlines request failed', [
-                'message' => $e->getMessage(),
-                'params' => $params
+                'params' => $params,
+                'error' => $e->getMessage(),
             ]);
 
             return collect();
@@ -105,8 +105,8 @@ class NytProvider implements NewsProvider
             return $this->formatArticles($docs);
         } catch (\Exception $e) {
             Log::error('[NytProvider] everything request failed', [
-                'message' => $e->getMessage(),
-                'params' => $params
+                'params' => $params,
+                'error' => $e->getMessage(),
             ]);
 
             return collect();

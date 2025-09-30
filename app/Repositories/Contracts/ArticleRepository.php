@@ -12,4 +12,6 @@ interface ArticleRepository
     public function upsertFromDTOs(array $articleDTOs): Collection;
     public function search(array $filters, int $page, int $pageSize): LengthAwarePaginator;
     public function newestPublishedAt(array $filters): ?Carbon;
+    public function findById(int $id): ?\App\Models\Article;
+    public function deleteById(int $id): bool;
 }

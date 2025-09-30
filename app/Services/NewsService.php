@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Models\Article;
 use App\Repositories\EloquentArticleRepository;
 use App\Integrations\News\ProviderAggregator;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * News Service
@@ -26,6 +28,66 @@ class NewsService
         private EloquentArticleRepository $articleRepository,
         private ProviderAggregator $providerAggregator,
     ) {}
+
+    /**
+     * Find article by ID
+     * 
+     * @param int $id Article ID
+     * @return Article|null
+     */
+    public function findById(int $id): ?Article
+    {
+        try {            
+            $article = $this->articleRepository->findById($id);
+
+            if (!$article) {
+                Log::warning('[NewsService] Article not found', ['id' => $id]);
+                throw new HttpException(404, "Article with ID {$id} does not exist");
+            }
+            
+            return $article;
+        } catch (HttpException $e) {
+            // Re-throw HTTP exceptions to preserve status codes (404, etc.)
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('[NewsService] Failed to retrieve article', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new \Exception('Failed to retrieve article', 500);
+        }
+    }
+
+    /**
+     * Delete article by ID
+     * 
+     * @param int $id Article ID
+     * @return bool True if deleted, false if not found
+     */
+    public function deleteById(int $id): bool
+    {
+        try {            
+            $deleted = $this->articleRepository->deleteById($id);
+            
+            if (!$deleted) {
+                Log::warning('[NewsService] Article not found for deletion', ['id' => $id]);
+                throw new HttpException(404, "Article with ID {$id} does not exist or could not be deleted");
+            }
+            
+            return true;            
+        } catch (HttpException $e) {
+            // Re-throw HTTP exceptions to preserve status codes (404, etc.)
+            throw $e;
+        } catch (\Exception $e) {
+            Log::error('[NewsService] Failed to delete article', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new \Exception('Failed to delete article', 500);
+        }
+    }
 
     /**
      * Get top headlines

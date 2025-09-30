@@ -24,6 +24,34 @@ use Illuminate\Support\Facades\Log;
 class EloquentArticleRepository implements ArticleRepository
 {
     /**
+     * Find article by ID
+     * 
+     * @param int $id Article ID
+     * @return Article|null
+     */
+    public function findById(int $id): ?Article
+    {
+        return Article::find($id);
+    }
+
+    /**
+     * Delete article by ID
+     * 
+     * @param int $id Article ID
+     * @return bool True if deleted, false if not found
+     */
+    public function deleteById(int $id): bool
+    {
+        $article = Article::find($id);
+        
+        if (!$article) {
+            return false;
+        }
+        
+        return $article->delete();
+    }
+
+    /**
      * Insert or update articles from DTOs
      * 
      * Converts Article DTOs to database records and performs upsert operations.

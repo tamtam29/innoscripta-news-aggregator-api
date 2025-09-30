@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\HeadlinesRequest;
 use App\Http\Requests\SearchNewsRequest;
 use App\Http\Resources\ArticleCollection;
+use App\Http\Resources\ArticleResource;
 use App\Services\NewsService;
 use App\Services\NewsPreferenceService;
 
@@ -83,6 +84,34 @@ class NewsController extends Controller
                 'prev'  => $paginator->previousPageUrl(),
                 'next'  => $paginator->nextPageUrl(),
             ],
+        ]);
+    }
+
+    /**
+     * Show a specific article
+     * 
+     * @param int $id Article ID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show(int $id)
+    {
+        $result = $this->newsService->findById($id);   
+        return response()->json(new ArticleResource($result));
+    }
+
+    /**
+     * Delete a specific article
+     * 
+     * @param int $id Article ID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy(int $id)
+    {
+        $deleted = $this->newsService->deleteById($id);
+        
+        return response()->json([
+            'message' => 'Article deleted successfully',
+            'data' => ['id' => $id]
         ]);
     }
 }

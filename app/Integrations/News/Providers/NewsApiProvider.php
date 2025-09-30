@@ -75,8 +75,8 @@ class NewsApiProvider implements NewsProvider
             return $this->formatArticles($json['articles'] ?? [], $category);
         } catch (\Exception $e) {
             Log::error('[NewsApiProvider] topHeadlines request failed', [
-                'message' => $e,
-                'params' => $params
+                'params' => $params,
+                'error' => $e->getMessage(),
             ]);
 
             return collect();
@@ -119,8 +119,8 @@ class NewsApiProvider implements NewsProvider
             return $this->formatArticles($json['articles'] ?? [], null);
         } catch (\Exception $e) {
             Log::error('[NewsApiProvider] everything request failed', [
-                'message' => $e->getMessage(),
-                'params' => $params
+                'params' => $params,
+                'error' => $e->getMessage(),
             ]);
 
             return collect();
