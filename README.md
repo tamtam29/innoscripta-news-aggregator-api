@@ -99,9 +99,19 @@ Is data fresh? (within cache time)
 - **Pagination**: Efficient large dataset handling
 - **Relationship Loading**: Eager loading to prevent N+1
 
+### Rate Limiting
+
+- **NewsAPI**: 100 requests/day
+- **Guardian API**: 1 request/second, 500 requests/day  
+- **New York Times**: 5 requests/minute, 500 requests/day
+- **Automatic Throttling**: Built-in delays between requests
+- **Cache-Based Tracking**: Redis/database-backed request counting
+- **Graceful Degradation**: Skip providers that hit limits
+
 ### Error Handling
 
 - **Provider Failures**: Graceful degradation
+- **Rate Limit Violations**: Automatic provider skipping
 - **Logging**: Comprehensive error tracking
 
 ## 📁 Project Structure
