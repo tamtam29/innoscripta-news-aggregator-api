@@ -1,61 +1,411 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# innoscripta - News Aggregator API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-based news aggregation system that provides unified access to multiple news providers (NewsAPI, Guardian, New York Times) with caching, background processing, and preferences.
 
-## About Laravel
+[![Backend](https://img.shields.io/badge/Backend-Laravel%2012-red?style=for-the-badge&logo=laravel)](backend/)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-4169E1?style=for-the-badge&logo=postgresql)
+[![Queue System](https://img.shields.io/badge/Queue-Redis%20%2B%20Laravel-green?style=for-the-badge&logo=redis)](backend/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-blue?style=for-the-badge&logo=docker)](docker-compose.yml)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🚀 Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Multi-Provider Integration**: Seamlessly aggregates news from NewsAPI, Guardian, and New York Times
+- **Caching**: Cache invalidation with configurable freshness intervals
+- **Background Processing**: Queue-based article fetching for optimal performance
+- **User Preferences**: Personalized filtering by sources, categories, and authors
+- **RESTful API**: Complete OpenAPI 3.0 documented endpoints
+- **Docker Support**: Full containerization with PostgreSQL and Nginx
+- **Repository Pattern**: Clean architecture with dependency injection
+- **Testing**: Unit and feature tests for reliability
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🏗️ Architecture Overview
 
-## Learning Laravel
+### Design Patterns
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+This application follows **SOLID principles** and implements several design patterns:
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **Repository Pattern**: Data access abstraction with contracts
+- **Service Layer Pattern**: Business logic separation
+- **Strategy Pattern**: Multiple news API integrations (NewsAPI, Guardian, NYT)
+- **Factory Pattern**: Provider instantiation and model factories for testing
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### System Architecture
 
-## Laravel Sponsors
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   API Routes    │────│   Controllers   │────│    Services     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                ┌───────────────────────├──────────────────────┐
+                                ▼                                              ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Resources     │◄───│   Repositories  │◄───│  Provider       │◄───│ External APIs   │
+│   (Transform)   │    │   (Data Access) │    │  Aggregator     │    │ (News Sources)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                                              ▲
+                                ▼                                              │
+                       ┌─────────────────┐    ┌─────────────────┐              │
+                       │    Models       │────│    Database     │              │
+                       │   (Eloquent)    │    │  (PostgreSQL)   │              │
+                       └─────────────────┘    └─────────────────┘              │
+                                                                               │
+                       ┌──────────────────────────────────┐                    │
+                       │ Background Jobs/Queue Processing │────────────────────┘
+                       └──────────────────────────────────┘
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Data Flow
 
-### Premium Partners
+```
+1. Request → Controller → Request Validation
+2. Controller → Service Layer → Business Logic
+3. Service → Repository → Database Query
+4. Service → Provider Aggregator → External APIs
+5. Background Job → Queue → Async Processing
+6. Repository → Model → Database Storage
+7. Resource → Response Transformation
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 📁 Project Structure
 
-## Contributing
+```
+├── run.sh                                    # Application startup script
+├── start.sh                                  # Development startup script
+├── app/
+    ├── Exceptions/
+    │   └── HandlerException.php              # Custom exception handling
+    ├── Http/
+    │   ├── Controllers/
+    │   │   ├── Controller.php                # Base controller
+    │   │   └── Api/                          # RESTful API controllers
+    │   │       ├── NewsController.php        # News endpoints
+    │   │       ├── PreferenceController.php  # User preferences
+    │   │       └── SourceController.php      # News sources
+    │   ├── Requests/                         
+    │   │   ├── HeadlinesRequest.php          # Headlines validation
+    │   │   ├── SearchNewsRequest.php         # Search validation
+    │   │   └── PreferenceRequest.php         # Preferences validation
+    │   └── Resources/                        
+    │       ├── ArticleCollection.php         # Article transformation
+    │       ├── ArticleResource.php           # Article transformation
+    │       └── PreferenceResource.php        # Preference transformation
+    ├── Integrations/News/                    # External API integrations
+    │   ├── Contracts/
+    │   │   └── NewsProvider.php              # Provider interface
+    │   ├── DTOs/
+    │   │   └── Article.php                   # Data transfer objects
+    │   ├── Providers/
+    │   │   ├── NewsApiProvider.php           # NewsAPI integration
+    │   │   ├── GuardianProvider.php          # Guardian API integration
+    │   │   └── NytProvider.php               # New York Times API
+    │   ├── Supports/
+    │   │   ├── RateLimitTrait.php            # Rate limiting utilities
+    │   │   └── Taxonomy.php                  # Category mapping
+    │   ├── ProviderAggregator.php            # Provider coordination
+    │   └── ProviderFactory.php               # Provider instantiation
+    ├── Jobs/                                 
+    │   └── FetchNewsArticles.php             # Async news fetching
+    ├── Models/                               
+    │   ├── Article.php                       # News article model
+    │   ├── ArticleSource.php                 # Article-source pivot
+    │   ├── Preference.php                    # User preferences
+    │   ├── Source.php                        # News source model
+    ├── Repositories/                         
+    │   ├── Contracts/                        
+    │   │   ├── ArticleRepository.php         # Article interface
+    │   │   ├── PreferenceRepository.php      # Preference interface
+    │   │   └── SourceRepository.php          # Source interface
+    │   ├── EloquentArticleRepository.php     # Article implementation
+    │   ├── EloquentPreferenceRepository.php  # Preference implementation
+    │   └── EloquentSourceRepository.php      # Source implementation
+    └── Services/                             
+        ├── NewsService.php                   # Core news operations
+        ├── PreferenceService.php             # Preference management
+        └── SourceService.php                 # Source management
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```
 
-## Code of Conduct
+## 🌐 API Endpoints
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### News Endpoints
 
-## Security Vulnerabilities
+| Method | Endpoint | Description | Caching |
+|--------|----------|-------------|---------|
+| `GET` | `/api/news/headlines` | Get top headlines | 15 min |
+| `GET` | `/api/news/search` | Search articles | 60 min |
+| `GET` | `/api/news/{id}` | Get specific article | N/A |
+| `DELETE` | `/api/news/{id}` | Delete article | N/A |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Preference Endpoints
 
-## License
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/preferences` | Get current preferences |
+| `PUT` | `/api/preferences` | Update preferences |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Source Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/sources` | Get all available news sources |
+
+### Example Requests
+
+**Get Headlines with Preferences Applied:**
+```bash
+curl -X GET "http://localhost/api/news/headlines?page=1&pageSize=20"
+```
+
+**Search with Override Parameters:**
+```bash
+curl -X GET "http://localhost/api/news/search?keyword=AI&source=BBC&category=technology"
+```
+
+**Update Preferences:**
+```bash
+curl -X PUT "http://localhost/api/preferences" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "BBC News",
+    "category": "technology", 
+    "author": "John Smith"
+  }'
+```
+
+## 🐳 Docker Setup
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Git
+
+### Quick Start
+
+1. **Clone the repository:**
+```bash
+git clone <repository-url>
+cd news-aggregator
+```
+
+2. **Environment setup:**
+```bash
+cp .env.example .env
+# Edit .env with your API keys and database credentials
+```
+
+3. **Start with Docker:**
+```bash
+docker-compose up -d
+```
+
+4. **Install dependencies:**
+```bash
+docker exec -it backend_api composer install
+```
+
+5. **Generate application key:**
+```bash
+docker exec -it backend_api php artisan key:generate
+```
+
+6. **Run migrations and seed:**
+```bash
+docker exec -it backend_api php artisan migrate --seed
+```
+
+### Docker Services
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `backend_api` | - | Laravel application |
+| `nginx` | 80 | Web server |
+| `postgres` | 5432 | PostgreSQL database |
+| `pgadmin` | 8081 | Database administration |
+
+## ⚙️ Manual Setup
+
+### Requirements
+
+- PHP 8.2+
+- Composer
+- PostgreSQL 13+
+- Redis (for queues)
+
+### Installation Steps
+
+1. **Install dependencies:**
+```bash
+composer install
+```
+
+2. **Environment configuration:**
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+3. **Database setup:**
+```bash
+php artisan migrate --seed
+```
+
+4. **Configure API keys in `.env`:**
+```env
+NEWS_API_KEY=your_newsapi_key
+GUARDIAN_API_KEY=your_guardian_key
+NYT_API_KEY=your_nyt_key
+```
+
+5. **Start queue worker:**
+```bash
+php artisan queue:work --queue=news
+```
+
+6. **Start development server:**
+```bash
+php artisan serve
+```
+
+## 🔧 Configuration
+
+### News Provider Configuration (`config/news.php`)
+
+```php
+return [
+    'newsapi'  => ['base' => 'https://newsapi.org/v2', 'key' => env('NEWS_API_KEY', '')],
+    'guardian' => ['base' => 'https://content.guardianapis.com', 'key' => env('GUARDIAN_API_KEY', '')],
+    'nyt'      => ['base' => 'https://api.nytimes.com/svc', 'key' => env('NYT_API_KEY', '')],
+
+    'enabled_providers' => ['newsapi', 'guardian', 'nyt'],
+
+    'freshness' => [
+        'headlines_minutes' => 15,  // Cache headlines for 15 minutes
+        'search_minutes'    => 60,  // Cache search results for 1 hour
+    ],
+];
+```
+
+### Queue Configuration
+
+```env
+QUEUE_CONNECTION=database
+# or for Redis:
+# QUEUE_CONNECTION=redis
+```
+
+## 🔄 Queue Processing
+
+### Background Jobs
+
+The system uses Laravel queues for optimal performance:
+
+```bash
+# Start queue worker
+php artisan queue:work --queue=news
+
+# Monitor queue status
+php artisan queue:monitor news
+
+# Process failed jobs
+php artisan queue:retry all
+```
+
+### Queue Flow
+
+1. **Immediate Response**: API returns cached data immediately
+2. **Background Fetch**: If data is stale, job queued for fresh data
+3. **Provider Calls**: Job fetches from multiple providers
+4. **Data Merge**: Articles upserted with conflict resolution
+5. **Cache Update**: Fresh data available for next request
+
+## 🧪 Testing
+
+
+### Test Structure
+
+```
+tests/
+├── Feature/                      
+│   ├── AuthenticationTest.php
+│   └── NewsControllerTest.php
+├── Unit/                      
+│   ├── ArticleModelTest.php
+│   ├── EloquentArticleRepositoryTest.php
+│   ├── NewsApiProviderTest.php
+│   └── NewsServiceTest.php
+└── TestCase.php              
+```
+
+## 📊 Performance Features
+
+### Caching Strategy
+
+- **Headlines**: 15-minute cache (frequent updates)
+- **Search**: 60-minute cache (less frequent changes)
+- **Cache Keys**: Include preferences hash for invalidation
+
+### Database Optimization
+
+- **Upsert Operations**: Conflict resolution on `url_sha1`
+- **Indexed Queries**: Optimized search performance
+- **Pagination**: Efficient large dataset handling
+- **Relationship Loading**: Eager loading to prevent N+1
+
+### Error Handling
+
+- **Provider Failures**: Graceful degradation
+- **Logging**: Comprehensive error tracking
+
+## 📖 API Documentation
+
+### OpenAPI Documentation
+
+The API is fully documented with OpenAPI 3.0 specifications:
+
+```bash
+# Generate Swagger documentation
+php artisan l5-swagger:generate
+
+# Access documentation at:
+http://localhost/api/documentation
+```
+
+## 🚀 Deployment
+
+### Production Checklist
+
+- [ ] Set `APP_ENV=production`
+- [ ] Configure cache driver (`redis` recommended)
+- [ ] Set up queue workers with supervisor
+- [ ] Configure proper logging
+- [ ] Set up SSL certificates
+- [ ] Configure rate limiting
+- [ ] Set up monitoring and alerts
+
+### Environment Variables
+
+```env
+# Application
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://your-domain.com
+
+# Database
+DB_CONNECTION=pgsql
+DB_HOST=your-db-host
+DB_DATABASE=news_aggregator
+DB_USERNAME=your-username
+DB_PASSWORD=your-password
+
+# Cache & Queue
+CACHE_DRIVER=redis
+QUEUE_CONNECTION=redis
+REDIS_HOST=your-redis-host
+
+# News API Keys
+NEWS_API_KEY=your-newsapi-key
+GUARDIAN_API_KEY=your-guardian-key
+NYT_API_KEY=your-nyt-key
+```
+
+**Built with ❤️ using Laravel, following SOLID principles and modern PHP practices.**
