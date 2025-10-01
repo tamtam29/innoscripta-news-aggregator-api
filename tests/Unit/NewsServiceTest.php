@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Jobs\FetchNewsArticles;
 use App\Services\NewsService;
+use App\Services\PreferenceService;
 use App\Services\SourceService;
 use App\Repositories\EloquentArticleRepository;
 use App\Integrations\News\ProviderAggregator;
@@ -28,6 +29,7 @@ class NewsServiceTest extends TestCase
     protected NewsService $newsService;
     protected $mockArticleRepository;
     protected $mockProviderAggregator;
+    protected $mockPreferenceService;
 
     /**
      * Set up test environment with mocked dependencies
@@ -38,10 +40,12 @@ class NewsServiceTest extends TestCase
 
         $this->mockArticleRepository = Mockery::mock(EloquentArticleRepository::class);
         $this->mockProviderAggregator = Mockery::mock(ProviderAggregator::class);
+        $this->mockPreferenceService = Mockery::mock(PreferenceService::class);
 
         $this->newsService = new NewsService(
             $this->mockArticleRepository,
-            $this->mockProviderAggregator
+            $this->mockProviderAggregator,
+            $this->mockPreferenceService
         );
     }
 
@@ -55,12 +59,27 @@ class NewsServiceTest extends TestCase
     }
 
     /**
+     * Setup default preference service mocks for tests that don't need specific preference behavior
+     */
+    private function setupDefaultPreferenceMocks(): void
+    {
+        $this->mockPreferenceService
+            ->shouldReceive('hasAnyPreferences')
+            ->andReturn(false);
+        
+        $this->mockPreferenceService
+            ->shouldReceive('getPreference')
+            ->andReturn((object)[]);
+    }
+
+    /**
      * Test fetchNewsArticles with fresh data uses queue
      */
     public function test_get_headlines_with_fresh_data_uses_queue(): void
     {
         // Arrange
         Queue::fake();
+        $this->setupDefaultPreferenceMocks();
 
         $this->mockProviderAggregator
             ->shouldReceive('enabled')
@@ -84,6 +103,7 @@ class NewsServiceTest extends TestCase
     {
         // Arrange
         Queue::fake();
+        $this->setupDefaultPreferenceMocks();
 
         $this->mockArticleRepository
             ->shouldReceive('search')
@@ -111,6 +131,7 @@ class NewsServiceTest extends TestCase
             'category' => 'technology',
             'country' => 'us'
         ];
+        $this->setupDefaultPreferenceMocks();
 
         $this->mockProviderAggregator
             ->shouldReceive('enabled')
@@ -143,6 +164,7 @@ class NewsServiceTest extends TestCase
     {
         // Arrange
         $keyword = 'Laravel';
+        $this->setupDefaultPreferenceMocks();
 
         $this->mockProviderAggregator
             ->shouldReceive('enabled')
@@ -180,6 +202,7 @@ class NewsServiceTest extends TestCase
             'from' => '2025-10-01',
             'to' => '2025-10-31'
         ];
+        $this->setupDefaultPreferenceMocks();
 
         $this->mockProviderAggregator
             ->shouldReceive('enabled')
@@ -278,6 +301,8 @@ class NewsServiceTest extends TestCase
     public function test_get_headlines_with_empty_results(): void
     {
         // Arrange
+        $this->setupDefaultPreferenceMocks();
+        
         $this->mockProviderAggregator
             ->shouldReceive('enabled')
             ->andReturn(collect([]));
@@ -301,6 +326,8 @@ class NewsServiceTest extends TestCase
     public function test_search_articles_with_empty_keyword(): void
     {
         // Arrange
+        $this->setupDefaultPreferenceMocks();
+        
         $this->mockProviderAggregator
             ->shouldReceive('enabled')
             ->andReturn(collect([]));

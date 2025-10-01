@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Article;
+use App\Models\Preference;
 use App\Models\Source;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -14,17 +15,35 @@ use Tests\TestCase;
  * Tests the complete HTTP flow for article management endpoints
  * without authentication requirements.
  */
-class ArticleControllerTest extends TestCase
+class NewsControllerTest extends TestCase
 {
     use RefreshDatabase;
     use WithFaker;
+
+    /**
+     * Set up test environment
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        // Create a default preference record to avoid null preference issues
+        Preference::create([
+            'source' => null,
+            'category' => null,
+            'author' => null,
+        ]);
+    }
 
     /**
      * Test fetching headlines with default parameters
      */
     public function test_can_fetch_headlines_with_default_parameters(): void
     {
-        // Arrange
+        // Arrange - Clear any existing data and create fresh test data
+        Article::query()->delete();
+        Source::query()->delete();
+        
         $source = Source::factory()->create(['is_active' => true]);
         Article::factory(5)->create(['source_id' => $source->id]);
 
@@ -65,7 +84,10 @@ class ArticleControllerTest extends TestCase
      */
     public function test_can_filter_articles_by_source(): void
     {
-        // Arrange
+        // Arrange - Clear any existing data and create fresh test data
+        Article::query()->delete();
+        Source::query()->delete();
+        
         $targetSource = Source::factory()->create(['name' => 'BBC News', 'is_active' => true]);
         $otherSource = Source::factory()->create(['name' => 'CNN', 'is_active' => true]);
 
@@ -90,7 +112,10 @@ class ArticleControllerTest extends TestCase
      */
     public function test_can_filter_articles_by_category(): void
     {
-        // Arrange
+        // Arrange - Clear any existing data and create fresh test data
+        Article::query()->delete();
+        Source::query()->delete();
+        
         $source = Source::factory()->create(['is_active' => true]);
         Article::factory(2)->create(['source_id' => $source->id, 'category' => 'technology']);
         Article::factory(3)->create(['source_id' => $source->id, 'category' => 'sports']);
@@ -113,7 +138,10 @@ class ArticleControllerTest extends TestCase
      */
     public function test_can_search_articles_by_keyword(): void
     {
-        // Arrange
+        // Arrange - Clear any existing data and create fresh test data
+        Article::query()->delete();
+        Source::query()->delete();
+        
         $source = Source::factory()->create(['is_active' => true]);
         Article::factory()->create([
             'source_id' => $source->id,
@@ -142,7 +170,10 @@ class ArticleControllerTest extends TestCase
      */
     public function test_can_filter_articles_by_date_range(): void
     {
-        // Arrange
+        // Arrange - Clear any existing data and create fresh test data
+        Article::query()->delete();
+        Source::query()->delete();
+        
         $source = Source::factory()->create(['is_active' => true]);
         $fromDate = now()->subDays(7);
         $toDate = now()->subDays(1);
