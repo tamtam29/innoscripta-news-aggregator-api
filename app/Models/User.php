@@ -54,14 +54,4 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-
-    /**
-     * Get the news preferences for this user
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function newsPreferences()
-    {
-        return $this->hasMany(NewsPreference::class);
-    }
 }

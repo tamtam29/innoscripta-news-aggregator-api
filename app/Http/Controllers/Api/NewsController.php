@@ -8,7 +8,6 @@ use App\Http\Requests\SearchNewsRequest;
 use App\Http\Resources\ArticleCollection;
 use App\Http\Resources\ArticleResource;
 use App\Services\NewsService;
-use App\Services\NewsPreferenceService;
 
 /**
  * News API Controller
@@ -21,7 +20,6 @@ class NewsController extends Controller
 {
     public function __construct(
         private NewsService $newsService,
-        private NewsPreferenceService $newsPreferenceService,
     ) {
     }
 

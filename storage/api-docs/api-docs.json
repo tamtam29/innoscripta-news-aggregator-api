@@ -676,10 +676,10 @@
                         "example": "John Smith",
                         "nullable": true
                     },
-                    "source": {
+                    "source_id": {
                         "description": "Publishing organization or website",
-                        "type": "string",
-                        "example": "TechCrunch",
+                        "type": "integer",
+                        "example": 1,
                         "nullable": true
                     },
                     "published_at": {
