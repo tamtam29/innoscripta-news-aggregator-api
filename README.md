@@ -94,7 +94,7 @@ Is data fresh? (within cache time)
 
 ### Database Optimization
 
-- **Upsert Operations**: Conflict resolution on `url_sha1`
+- **Upsert Operations**: Conflict resolution
 - **Indexed Queries**: Optimized search performance
 - **Pagination**: Efficient large dataset handling
 - **Relationship Loading**: Eager loading to prevent N+1
