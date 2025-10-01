@@ -66,6 +66,44 @@ This application follows **SOLID principles** and implements several design patt
 7. Resource → Response Transformation
 ```
 
+## 📊 Performance Features
+
+### Caching Strategy
+
+The application implements a caching strategy that balances data freshness with API efficiency:
+
+```
+Request → Database Query
+    ↓
+Is data fresh? (within cache time)
+    ├─ YES → Return database results immediately
+    └─ NO → Should fetch new data
+        ├─ Database empty (total === 0)
+        │   └─ SYNCHRONOUS: Fetch → Wait → Return fresh data
+        └─ Database has data (total > 0)
+            ├─ ASYNCHRONOUS: Dispatch background job
+            └─ Return existing data immediately
+```
+
+#### Cache Configuration
+
+- **Headlines**: 15-minute cache (frequent updates needed)
+- **Search**: 60-minute cache (less time-sensitive)
+- **Cache Keys**: Include all filter parameters for precise invalidation
+- **Background Refresh**: Prevents user-facing API timeouts
+
+### Database Optimization
+
+- **Upsert Operations**: Conflict resolution on `url_sha1`
+- **Indexed Queries**: Optimized search performance
+- **Pagination**: Efficient large dataset handling
+- **Relationship Loading**: Eager loading to prevent N+1
+
+### Error Handling
+
+- **Provider Failures**: Graceful degradation
+- **Logging**: Comprehensive error tracking
+
 ## 📁 Project Structure
 
 ```
@@ -161,17 +199,6 @@ curl -X GET "http://localhost/api/news/headlines?page=1&pageSize=20"
 curl -X GET "http://localhost/api/news/search?keyword=AI&source=BBC&category=technology"
 ```
 
-**Update Preferences:**
-```bash
-curl -X PUT "http://localhost/api/preferences" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "BBC News",
-    "category": "technology", 
-    "author": "John Smith"
-  }'
-```
-
 ## 🐳 Docker Setup
 
 ### Prerequisites
@@ -184,13 +211,16 @@ curl -X PUT "http://localhost/api/preferences" \
 1. **Clone the repository:**
 ```bash
 git clone <repository-url>
-cd news-aggregator
+cd innoscripta-news-aggregator-api
 ```
 
 2. **Environment setup:**
 ```bash
 cp .env.example .env
 # Edit .env with your API keys and database credentials
+# NEWS_API_KEY=your_newsapi_key
+# GUARDIAN_API_KEY=your_guardian_key
+# NYT_API_KEY=your_nyt_key
 ```
 
 3. **Start with Docker:**
@@ -336,27 +366,7 @@ tests/
 └── TestCase.php              
 ```
 
-## 📊 Performance Features
-
-### Caching Strategy
-
-- **Headlines**: 15-minute cache (frequent updates)
-- **Search**: 60-minute cache (less frequent changes)
-- **Cache Keys**: Include preferences hash for invalidation
-
-### Database Optimization
-
-- **Upsert Operations**: Conflict resolution on `url_sha1`
-- **Indexed Queries**: Optimized search performance
-- **Pagination**: Efficient large dataset handling
-- **Relationship Loading**: Eager loading to prevent N+1
-
-### Error Handling
-
-- **Provider Failures**: Graceful degradation
-- **Logging**: Comprehensive error tracking
-
-## 📖 API Documentation
+##  API Documentation
 
 ### OpenAPI Documentation
 
