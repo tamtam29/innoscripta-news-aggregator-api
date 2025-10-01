@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Repositories\EloquentArticleRepository;
 use App\Integrations\News\ProviderAggregator;
 use App\Jobs\FetchNewsArticles;
+use App\Services\PreferenceService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  *
  * Manages news article retrieval from providers and database.
  * Handles both headlines and search functionality with freshness checking.
+ * Integrates user preferences for automatic filtering.
  *
  * @package App\Services
  */
@@ -28,6 +30,7 @@ class NewsService
     public function __construct(
         private EloquentArticleRepository $articleRepository,
         private ProviderAggregator $providerAggregator,
+        private PreferenceService $preferenceService,
     ) {
     }
 
@@ -101,6 +104,7 @@ class NewsService
      */
     public function getHeadlines(array $params, int $page, int $pageSize): LengthAwarePaginator
     {
+        $params = $this->mergeWithPreferences($params);
         return $this->fetchArticles($params, $page, $pageSize, self::MODE_HEADLINES);
     }
 
@@ -114,7 +118,54 @@ class NewsService
      */
     public function searchArticles(array $params, int $page, int $pageSize): LengthAwarePaginator
     {
+        $params = $this->mergeWithPreferences($params);
         return $this->fetchArticles($params, $page, $pageSize, self::MODE_SEARCH);
+    }
+
+    /**
+     * Merge user preferences with request parameters
+     * Request parameters take precedence over preferences
+     *
+     * @param array $params Request parameters
+     * @return array Merged parameters with preferences applied
+     */
+    private function mergeWithPreferences(array $params): array
+    {
+        try {
+            // Only apply preferences if we have preferences AND request only contains pagination params
+            $hasOnlyPaginationParams = empty(array_diff(array_keys($params), ['page', 'pageSize']));
+
+            if (!$this->preferenceService->hasAnyPreferences() || !$hasOnlyPaginationParams) {
+                return $params;
+            }
+
+            $preferences = $this->preferenceService->getPreference();
+
+            // Only apply preferences if the specific filter is not already set in params
+            if (empty($params['source']) && !empty($preferences->source)) {
+                $params['source'] = $preferences->source;
+            }
+
+            if (empty($params['category']) && !empty($preferences->category)) {
+                $params['category'] = $preferences->category;
+            }
+
+            if (empty($params['author']) && !empty($preferences->author)) {
+                $params['author'] = $preferences->author;
+            }
+
+            Log::info('[NewsService] Applied user preferences to search', [
+                'original_params' => array_keys($params),
+                'preferences_applied' => array_keys(array_filter($preferences))
+            ]);
+
+        } catch (\Exception $e) {
+            Log::warning('[NewsService] Failed to apply preferences, proceeding without them', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        return $params;
     }
 
     /**

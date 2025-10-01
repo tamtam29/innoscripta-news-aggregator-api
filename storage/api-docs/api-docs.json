@@ -240,8 +240,7 @@
                         "description": "Filter by source name",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "TechCrunch"
+                            "type": "string"
                         }
                     },
                     {
@@ -264,8 +263,7 @@
                         "description": "Filter by author name",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "John Doe"
+                            "type": "string"
                         }
                     },
                     {
@@ -519,6 +517,138 @@
                 }
             }
         },
+        "/api/preferences": {
+            "get": {
+                "tags": [
+                    "Preferences"
+                ],
+                "summary": "Get current user preferences",
+                "description": "Retrieve the current preference settings for news filtering. Returns the singleton preference record containing preferred source, category, and author. These preferences are automatically applied when fetching news without explicit filters.",
+                "operationId": "getPreferences",
+                "responses": {
+                    "200": {
+                        "description": "Preferences retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PreferenceResource"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Internal server error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Preferences"
+                ],
+                "summary": "Update user preferences",
+                "description": "Create or update user preferences for automatic news filtering. These preferences will be applied when fetching news without explicit filter parameters. Request parameters in news endpoints will override these preferences.",
+                "operationId": "updatePreferences",
+                "requestBody": {
+                    "description": "Preference data to update. All fields are optional.",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "source": {
+                                        "description": "Preferred news source (max 200 characters)",
+                                        "type": "string",
+                                        "maxLength": 200,
+                                        "example": "BBC News"
+                                    },
+                                    "category": {
+                                        "description": "Preferred news category (max 50 characters)",
+                                        "type": "string",
+                                        "maxLength": 50,
+                                        "example": "technology"
+                                    },
+                                    "author": {
+                                        "description": "Preferred author (max 100 characters)",
+                                        "type": "string",
+                                        "maxLength": 100,
+                                        "example": "John Smith"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Preferences updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PreferenceResource"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "source": [
+                                                    "The source field must be a string."
+                                                ],
+                                                "category": [
+                                                    "The category field must be a string."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Internal server error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/sources": {
             "get": {
                 "tags": [
@@ -638,6 +768,36 @@
                 },
                 "type": "object"
             },
+            "PreferenceResource": {
+                "title": "Preference Resource",
+                "description": "User preference resource representation",
+                "properties": {
+                    "id": {
+                        "description": "Unique preference identifier",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "source": {
+                        "description": "Preferred news source",
+                        "type": "string",
+                        "example": "BBC News",
+                        "nullable": true
+                    },
+                    "category": {
+                        "description": "Preferred news category",
+                        "type": "string",
+                        "example": "technology",
+                        "nullable": true
+                    },
+                    "author": {
+                        "description": "Preferred author",
+                        "type": "string",
+                        "example": "John Smith",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Article": {
                 "title": "Article",
                 "description": "News article entity",
@@ -725,6 +885,10 @@
         {
             "name": "News",
             "description": "News"
+        },
+        {
+            "name": "Preferences",
+            "description": "Preferences"
         },
         {
             "name": "Sources",

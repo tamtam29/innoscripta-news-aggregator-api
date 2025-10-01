@@ -110,7 +110,7 @@ class NytProvider implements NewsProvider
             'q'          => $params['keyword'] ?? null,
             'begin_date' => isset($params['from']) ? str_replace('-', '', $params['from']) : null,
             'end_date'   => isset($params['to']) ? str_replace('-', '', $params['to']) : null,
-            'page'       => max(0, ($params['page'] ?? 1) - 1),
+            'page'       => $params['page'] ?? 1,
             'sort'       => 'newest',
             'api-key'    => $this->apiKey,
         ]);

@@ -18,9 +18,11 @@ use App\Services\NewsService;
  */
 class NewsController extends Controller
 {
-    public function __construct(
-        private NewsService $newsService,
-    ) {
+    private NewsService $newsService;
+
+    public function __construct(NewsService $newsService)
+    {
+        $this->newsService = $newsService;
     }
 
     /**
@@ -159,7 +161,7 @@ class NewsController extends Controller
      *         in="query",
      *         description="Filter by source name",
      *         required=false,
-     *         @OA\Schema(type="string", example="TechCrunch")
+     *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="provider",
@@ -173,7 +175,7 @@ class NewsController extends Controller
      *         in="query",
      *         description="Filter by author name",
      *         required=false,
-     *         @OA\Schema(type="string", example="John Doe")
+     *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
      *         name="from",
