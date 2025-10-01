@@ -216,6 +216,13 @@ curl -X GET "http://localhost/api/news/search?keyword=AI&source=BBC&category=tec
 - Docker & Docker Compose
 - Git
 
+### Start Everything (Recommended)
+```bash
+# Easy way - handles everything automatically
+./start.sh
+```
+
+
 ### Quick Start
 
 1. **Clone the repository:**
@@ -251,6 +258,11 @@ docker exec -it backend_api php artisan key:generate
 6. **Run migrations and seed:**
 ```bash
 docker exec -it backend_api php artisan migrate --seed
+```
+
+7. **Run queue:**
+```bash
+docker exec -it backend_api php artisan queue:work --queue=news
 ```
 
 ### Docker Services
