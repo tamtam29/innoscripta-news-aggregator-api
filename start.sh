@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Laravel Project Setup Script
-# This script sets up the Laravel project with Docker
+# News Aggregator Laravel Project Setup Script
+# This script sets up the complete News Aggregator project with Docker
+# Includes database setup, queue configuration, and news provider initialization
 
 set -e  # Exit on any error
 
@@ -32,13 +33,28 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Check system dependencies
+print_status "Checking system dependencies..."
+
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    print_error "Docker is not installed. Please install Docker first."
+    exit 1
+fi
+
+# Check if Docker Compose is available
+if ! command -v docker &> /dev/null || ! docker compose version &> /dev/null; then
+    print_error "Docker Compose is not available. Please install Docker Compose."
+    exit 1
+fi
+
 # Check if Docker is running
 print_status "Checking if Docker is running..."
 if ! docker info > /dev/null 2>&1; then
     print_error "Docker is not running. Please start Docker and try again."
     exit 1
 fi
-print_success "Docker is running"
+print_success "Docker and Docker Compose are ready"
 
 # Check and copy .env file
 print_status "Checking .env file..."
@@ -106,6 +122,14 @@ else
     print_success "APP_KEY already exists"
 fi
 
+# Generate API documentation
+print_status "Generating API documentation..."
+if ./run.sh php artisan l5-swagger:generate; then
+    print_success "API documentation generated"
+else
+    print_warning "API documentation generation failed - continuing anyway"
+fi
+
 # Clear caches
 print_status "Clearing application caches..."
 ./run.sh php artisan config:clear
@@ -123,12 +147,40 @@ else
     exit 1
 fi
 
+# Seed the database with initial data
+print_status "Seeding database with initial data..."
+if ./run.sh php artisan db:seed --force; then
+    print_success "Database seeding completed"
+else
+    print_warning "Database seeding failed - continuing anyway"
+fi
+
+# Setup queue worker for background processing
+print_status "Setting up queue system..."
+if ./run.sh php artisan queue:clear; then
+    print_success "Queue cleared"
+else
+    print_warning "Queue clear failed - continuing anyway"
+fi
+
 echo ""
-echo "🎉 Project setup completed successfully!"
-echo "====================================="
-print_success "Your Laravel application is ready! http://localhost:8080"
-print_status "You can now access your application at the configured APP_URL"
-print_status "To view logs: docker compose logs -f"
-print_status "To stop containers: docker compose down"
-print_status "To restart containers: docker compose restart"
+echo "🎉 News Aggregator Setup Completed Successfully!"
+echo "==============================================="
+print_success "Your News Aggregator application is ready!"
+echo ""
+print_status "📱 Application URL: http://localhost:8080"
+print_status "📚 API Documentation: http://localhost:8080/api/documentation"
+echo ""
+print_status "📋 Available Commands:"
+print_status "  • View logs: docker compose logs -f"
+print_status "  • Stop containers: docker compose down"
+print_status "  • Restart containers: docker compose restart"
+print_status "  • Run queue worker: ./run.sh php artisan queue:work"
+print_status "  • Fetch news manually: ./run.sh php artisan app:fetch-news"
+print_status "  • Run tests: ./run.sh php artisan test"
+echo ""
+print_warning "⚠️  Remember to configure your news API keys in .env:"
+print_warning "   - NEWSAPI_KEY for NewsAPI.org"
+print_warning "   - GUARDIAN_API_KEY for Guardian API"
+print_warning "   - NYT_API_KEY for New York Times API"
 echo ""

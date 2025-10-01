@@ -63,6 +63,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Fetch top stories from NYT
+     *
+     * @param array $params Filter parameters for top stories
+     * @return Collection Collection of Article DTOs
      */
     public function topHeadlines(array $params = []): Collection
     {
@@ -73,6 +76,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Search NYT article archive
+     *
+     * @param array $params Search parameters including keyword and filters
+     * @return Collection Collection of Article DTOs
      */
     public function searchArticles(array $params = []): Collection
     {
@@ -82,6 +88,8 @@ class NytProvider implements NewsProvider
 
     /**
      * Build query parameters for top stories endpoint
+     *
+     * @return array Query parameters for top stories API call
      */
     private function buildTopStoriesParams(): array
     {
@@ -92,6 +100,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Build query parameters for article search endpoint
+     *
+     * @param array $params Request parameters
+     * @return array Formatted query parameters for API call
      */
     private function buildArticleSearchParams(array $params): array
     {
@@ -145,6 +156,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Transform API response into Article DTOs
+     *
+     * @param array $articles Raw article data from NYT API
+     * @return Collection Collection of formatted Article DTOs
      */
     private function formatArticles(array $articles): Collection
     {
@@ -153,6 +167,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Create Article DTO from NYT data
+     *
+     * @param array $article Raw article data from API
+     * @return Article Formatted Article DTO
      */
     private function createArticle(array $article): Article
     {
@@ -173,6 +190,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract title from different NYT response formats
+     *
+     * @param array $article Article data
+     * @return string Article title or fallback
      */
     private function extractTitle(array $article): string
     {
@@ -181,6 +201,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract description from different NYT response formats
+     *
+     * @param array $article Article data
+     * @return string|null Article description if available
      */
     private function extractDescription(array $article): ?string
     {
@@ -189,6 +212,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract URL from different NYT response formats
+     *
+     * @param array $article Article data
+     * @return string|null Article URL if available
      */
     private function extractUrl(array $article): ?string
     {
@@ -197,6 +223,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract image URL from NYT multimedia data
+     *
+     * @param array $article Article data with multimedia
+     * @return string|null Image URL if available
      */
     private function extractImageUrl(array $article): ?string
     {
@@ -215,6 +244,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract author from different NYT response formats
+     *
+     * @param array $article Article data
+     * @return string|null Author name if available
      */
     private function extractAuthor(array $article): ?string
     {
@@ -223,6 +255,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract publish date from different NYT response formats
+     *
+     * @param array $article Article data
+     * @return string Publish date or current time as fallback
      */
     private function extractPublishDate(array $article): string
     {
@@ -231,6 +266,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract category from different NYT response formats
+     *
+     * @param array $article Article data
+     * @return string|null Category name if available
      */
     private function extractCategory(array $article): ?string
     {
@@ -239,6 +277,9 @@ class NytProvider implements NewsProvider
 
     /**
      * Extract external ID from different NYT response formats
+     *
+     * @param array $article Article data
+     * @return string|null External identifier if available
      */
     private function extractId(array $article): ?string
     {

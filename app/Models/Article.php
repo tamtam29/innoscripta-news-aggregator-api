@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  *     @OA\Property(property="url", type="string", format="url", example="https://example.com/article/tech-advancement", description="Direct URL to the full article"),
  *     @OA\Property(property="image_url", type="string", format="url", nullable=true, example="https://example.com/images/tech-article.jpg", description="URL to the article's featured image"),
  *     @OA\Property(property="author", type="string", nullable=true, example="John Smith", description="Article author name"),
- *     @OA\Property(property="source", type="string", nullable=true, example="TechCrunch", description="Publishing organization or website"),
+ *     @OA\Property(property="source_id", type="integer", nullable=true, example=1, description="Publishing organization or website"),
  *     @OA\Property(property="published_at", type="string", format="date-time", example="2025-09-30T10:30:00Z", description="Article publication date and time"),
  *     @OA\Property(property="provider", type="string", enum={"newsapi", "guardian", "nyt"}, example="newsapi", description="News provider source"),
  *     @OA\Property(property="category", type="string", nullable=true, example="technology", description="Article category/topic"),
@@ -29,6 +30,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Article extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'title',
         'description',
@@ -36,9 +39,9 @@ class Article extends Model
         'url_sha1',
         'image_url',
         'author',
-        'source',
-        'published_at',
+        'source_id',
         'provider',
+        'published_at',
         'category',
     ];
 
@@ -51,7 +54,7 @@ class Article extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function article_sources()
+    public function articleSources()
     {
         return $this->hasMany(ArticleSource::class);
     }

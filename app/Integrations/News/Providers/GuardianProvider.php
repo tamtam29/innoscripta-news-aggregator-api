@@ -62,6 +62,9 @@ class GuardianProvider implements NewsProvider
 
     /**
      * Fetch top headlines ordered by relevance
+     *
+     * @param array $params Filter parameters for headlines
+     * @return Collection Collection of Article DTOs
      */
     public function topHeadlines(array $params = []): Collection
     {
@@ -71,6 +74,9 @@ class GuardianProvider implements NewsProvider
 
     /**
      * Search all content ordered by newest
+     *
+     * @param array $params Search parameters including filters
+     * @return Collection Collection of Article DTOs
      */
     public function searchArticles(array $params = []): Collection
     {
@@ -80,6 +86,10 @@ class GuardianProvider implements NewsProvider
 
     /**
      * Build Guardian API query parameters
+     *
+     * @param array $params Request parameters
+     * @param string $orderBy Sorting order for results
+     * @return array Formatted query parameters for API call
      */
     private function buildQueryParams(array $params, string $orderBy): array
     {
@@ -97,6 +107,10 @@ class GuardianProvider implements NewsProvider
 
     /**
      * Execute API request with rate limiting and error handling
+     *
+     * @param string $endpoint API endpoint to call
+     * @param array $params Query parameters for the request
+     * @return Collection Collection of Article DTOs
      */
     private function fetchArticles(string $endpoint, array $params): Collection
     {
@@ -135,6 +149,9 @@ class GuardianProvider implements NewsProvider
 
     /**
      * Transform API response into Article DTOs
+     *
+     * @param array $articles Raw articles from API response
+     * @return Collection Collection of Article DTOs
      */
     private function formatArticles(array $articles): Collection
     {
@@ -143,6 +160,9 @@ class GuardianProvider implements NewsProvider
 
     /**
      * Create Article DTO from Guardian data
+     *
+     * @param array $article Raw article data from Guardian API
+     * @return Article Article DTO instance
      */
     private function createArticle(array $article): Article
     {
