@@ -117,59 +117,61 @@ Is data fresh? (within cache time)
 ## 📁 Project Structure
 
 ```
-├── run.sh                                    # Application startup script
-├── start.sh                                  # Development startup script
 ├── app/
-    ├── Exceptions/
-    │   └── HandlerException.php              # Custom exception handling
-    ├── Http/
-    │   ├── Controllers/
-    │   │   ├── Controller.php                # Base controller
-    │   │   └── Api/                          # RESTful API controllers
-    │   │       ├── NewsController.php        # News endpoints
-    │   │       ├── PreferenceController.php  # User preferences
-    │   │       └── SourceController.php      # News sources
-    │   ├── Requests/                         
-    │   │   ├── HeadlinesRequest.php          # Headlines validation
-    │   │   ├── SearchNewsRequest.php         # Search validation
-    │   │   └── PreferenceRequest.php         # Preferences validation
-    │   └── Resources/                        
-    │       ├── ArticleCollection.php         # Article transformation
-    │       ├── ArticleResource.php           # Article transformation
-    │       └── PreferenceResource.php        # Preference transformation
-    ├── Integrations/News/                    # External API integrations
-    │   ├── Contracts/
-    │   │   └── NewsProvider.php              # Provider interface
-    │   ├── DTOs/
-    │   │   └── Article.php                   # Data transfer objects
-    │   ├── Providers/
-    │   │   ├── NewsApiProvider.php           # NewsAPI integration
-    │   │   ├── GuardianProvider.php          # Guardian API integration
-    │   │   └── NytProvider.php               # New York Times API
-    │   ├── Supports/
-    │   │   ├── RateLimitTrait.php            # Rate limiting utilities
-    │   │   └── Taxonomy.php                  # Category mapping
-    │   ├── ProviderAggregator.php            # Provider coordination
-    │   └── ProviderFactory.php               # Provider instantiation
-    ├── Jobs/                                 
-    │   └── FetchNewsArticles.php             # Async news fetching
-    ├── Models/                               
-    │   ├── Article.php                       # News article model
-    │   ├── ArticleSource.php                 # Article-source pivot
-    │   ├── Preference.php                    # User preferences
-    │   ├── Source.php                        # News source model
-    ├── Repositories/                         
-    │   ├── Contracts/                        
-    │   │   ├── ArticleRepository.php         # Article interface
-    │   │   ├── PreferenceRepository.php      # Preference interface
-    │   │   └── SourceRepository.php          # Source interface
-    │   ├── EloquentArticleRepository.php     # Article implementation
-    │   ├── EloquentPreferenceRepository.php  # Preference implementation
-    │   └── EloquentSourceRepository.php      # Source implementation
-    └── Services/                             
-        ├── NewsService.php                   # Core news operations
-        ├── PreferenceService.php             # Preference management
-        └── SourceService.php                 # Source management
+│    ├── Exceptions/
+│    │   └── HandlerException.php              # Custom exception handling
+│    ├── Http/
+│    │   ├── Controllers/
+│    │   │   ├── Controller.php                # Base controller
+│    │   │   └── Api/                          # RESTful API controllers
+│    │   │       ├── NewsController.php        # News endpoints
+│    │   │       ├── PreferenceController.php  # User preferences
+│    │   │       └── SourceController.php      # News sources
+│    │   ├── Requests/                         
+│    │   │   ├── HeadlinesRequest.php          # Headlines validation
+│    │   │   ├── SearchNewsRequest.php         # Search validation
+│    │   │   └── PreferenceRequest.php         # Preferences validation
+│    │   └── Resources/                        
+│    │       ├── ArticleCollection.php         # Article transformation
+│    │       ├── ArticleResource.php           # Article transformation
+│    │       └── PreferenceResource.php        # Preference transformation
+│    ├── Integrations/News/                    # External API integrations
+│    │   ├── Contracts/
+│    │   │   └── NewsProvider.php              # Provider interface
+│    │   ├── DTOs/
+│    │   │   └── Article.php                   # Data transfer objects
+│    │   ├── Providers/
+│    │   │   ├── NewsApiProvider.php           # NewsAPI integration
+│    │   │   ├── GuardianProvider.php          # Guardian API integration
+│    │   │   └── NytProvider.php               # New York Times API
+│    │   ├── Supports/
+│    │   │   ├── RateLimitTrait.php            # Rate limiting utilities
+│    │   │   └── Taxonomy.php                  # Category mapping
+│    │   ├── ProviderAggregator.php            # Provider coordination
+│    │   └── ProviderFactory.php               # Provider instantiation
+│    ├── Jobs/                                 
+│    │   └── FetchNewsArticles.php             # Async news fetching
+│    ├── Models/                               
+│    │   ├── Article.php                       # News article model
+│    │   ├── ArticleSource.php                 # Article-source pivot
+│    │   ├── Preference.php                    # User preferences
+│    │   ├── Source.php                        # News source model
+│    ├── Repositories/                         
+│    │   ├── Contracts/                        
+│    │   │   ├── ArticleRepository.php         # Article interface
+│    │   │   ├── PreferenceRepository.php      # Preference interface
+│    │   │   └── SourceRepository.php          # Source interface
+│    │   ├── EloquentArticleRepository.php     # Article implementation
+│    │   ├── EloquentPreferenceRepository.php  # Preference implementation
+│    │   └── EloquentSourceRepository.php      # Source implementation
+│    └── Services/                             
+│        ├── NewsService.php                   # Core news operations
+│        ├── PreferenceService.php             # Preference management
+│        └── SourceService.php                 # Source management
+├── docker-compose.yml                        # Docker services configuration
+├── Dockerfile                                # Application container build
+├── run.sh                                    # Application startup script
+└── start.sh                                  # Development startup script
 
 ```
 
